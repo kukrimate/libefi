@@ -16,7 +16,7 @@ typedef uint32_t uintn_t;
 typedef uint32_t size_t;
 
 /* Native max bit */
-#define MAX_BIT ((uintn_t) 1 << 32)
+#define MAX_BIT 0x80000000
 
 /* EFI function calling convention */
 #define efi_func

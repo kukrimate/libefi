@@ -1,0 +1,16 @@
+CC      = gcc
+LD      = ld
+AR      = ar
+CFLAGS  = -I../api -I../efiutil/include -ffreestanding -fno-stack-protector \
+ -fshort-wchar
+LDFLAGS = -shared -e efi_main -subsystem 10
+
+ifeq ($(shell uname -m),x86_64)
+	CFLAGS  += -mno-red-zone
+	LDFLAGS += -T ../tools/x86_64-efi.ld -m i386pep
+else
+	LDFLAGS += -T ../tools/ia-32-efi.ld -m i386pe
+endif
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ -o $@

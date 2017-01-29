@@ -4,11 +4,6 @@
 #ifndef __EFI_H
 #define __EFI_H
 
-/* Structure alingment */
-#if !defined(__GNUC__)
-#pragma pack()
-#endif
-
 /* Include CPU specific header */
 #if defined __amd64__ || defined _M_AMD64
 	#include <amd64/cpu.h>

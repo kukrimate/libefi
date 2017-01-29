@@ -16,7 +16,7 @@ typedef uint64_t uintn_t;
 typedef uint64_t size_t;
 
 /* Native max bit */
-#define MAX_BIT ((uintn_t) 1 << 64)
+#define MAX_BIT 0x8000000000000000
 
 /* EFI function calling convention */
 #if defined __GNUC__ && !defined _WIN32
