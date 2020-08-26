@@ -56,4 +56,9 @@ efi_device_path_protocol *append_filepath_device_path(efi_device_path_protocol *
 /* Locate all EFI handles that support the specified protocol */
 efi_status locate_all_handles(efi_guid *protocol, efi_size *num_handles, efi_handle **out_buffer);
 
+/* Get the file info struct for file */
+efi_status
+efiapi
+get_file_info(efi_file_protocol *file, efi_file_info **file_info);
+
 #endif

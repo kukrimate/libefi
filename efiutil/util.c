@@ -85,7 +85,7 @@ void *realloc(void *oldptr, efi_size oldsize, efi_size newsize)
 	/* Allocate the new region */
 	newptr = malloc(newsize);
 
-	/* Check if is oldptr NULL */
+	/* Check if is oldptr is NULL */
 	if (oldptr == NULL) {
 		return newptr;
 	}
@@ -235,5 +235,30 @@ retry:
 		return status;
 	}
 	*num_handles = buffer_size / sizeof(efi_handle);
+	return status;
+}
+
+/* File utils */
+
+efi_status
+efiapi
+get_file_info(efi_file_protocol *file, efi_file_info **file_info)
+{
+	efi_status status;
+	efi_size bufsize;
+
+	bufsize = 0;
+	*file_info = NULL;
+retry:
+	status = file->get_info(file,
+		&(efi_guid) EFI_FILE_INFO_ID,
+		&bufsize,
+		*file_info);
+
+	if (status == EFI_BUFFER_TOO_SMALL) {
+		*file_info = malloc(bufsize);
+		goto retry;
+	}
+
 	return status;
 }

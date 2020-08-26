@@ -58,6 +58,9 @@ typedef struct {
 // Physical address
 typedef efi_u64 efi_physical_address;
 
+// Virtual address
+typedef efi_u64 efi_virtual_address;
+
 // Allocation type
 typedef enum {
 	allocate_any_pages,
@@ -84,6 +87,15 @@ typedef enum {
 	efi_pal_code,
 	efi_max_memory_type
 } efi_memory_type;
+
+// Memory descriptor
+typedef struct {
+	efi_u32			type;
+	efi_physical_address	start;
+	efi_virtual_address	virtual_start;
+	efi_u64			number_of_pages;
+	efi_u64			attribute;
+} efi_memory_descriptor;
 
 // Locate search type
 typedef enum {
@@ -122,7 +134,12 @@ typedef struct {
 	// Memory allocation services
 	efi_status (efiapi *allocate_pages)  (efi_allocate_type type, efi_memory_type memory_type, efi_size pages, efi_physical_address *memory);
 	efi_status (efiapi *free_pages)      (efi_physical_address memory, efi_size pages);
-	void *get_memory_map;
+	efi_status (efiapi *get_memory_map)  (
+		efi_size *memory_map_size,
+		efi_memory_descriptor *memory_map,
+		efi_size *map_key,
+		efi_size *descriptor_size,
+		efi_u32 *descriptor_version);
 	efi_status (efiapi *allocate_pool)   (efi_memory_type pool_type, efi_size size, void **buffer);
 	efi_status (efiapi *free_pool)       (void *buffer);
 
