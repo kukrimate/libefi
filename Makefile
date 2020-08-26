@@ -1,6 +1,14 @@
-.PHONY: all clean
-all:
-	make -C efiutil/ all
+MODULES := efiutil yaub IntelSpiInfo
 
+.PHONY: all
+all:
+	for MOD in $(MODULES); do \
+		make -C $$MOD/ all; \
+	done
+
+
+.PHONY: clean
 clean:
-	make -C efiutil/ clean
+	for MOD in $(MODULES); do \
+		make -C $$MOD/ all; \
+	done
