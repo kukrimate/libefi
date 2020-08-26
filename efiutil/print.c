@@ -90,6 +90,10 @@ print(efi_ch16 *format, ...)
 				putchar('?');
 				break;
 			}
+		else if (*format == '\r') /* Hide CRLF */
+			continue;
+		else if (*format == '\n')
+			puts(L"\r\n");
 		else
 			putchar(*format);
 	}
