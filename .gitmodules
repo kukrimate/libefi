@@ -1,0 +1,6 @@
+[submodule "yaub"]
+	path = yaub
+	url = https://github.com/kukrimate/yaub
+[submodule "IntelSpiInfo"]
+	path = IntelSpiInfo
+	url = https://github.com/kukrimate/IntelSpiInfo
