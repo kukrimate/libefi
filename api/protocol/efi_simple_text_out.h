@@ -1,29 +1,29 @@
 /*
  * EFI simple text output protocol
  */
-#ifndef __EFI_SIMPLE_TEXT_OUT_H
-#define __EFI_SIMPLE_TEXT_OUT_H
+#ifndef EFI_SIMPLE_TEXT_OUT_H
+#define EFI_SIMPLE_TEXT_OUT_H
 
 typedef struct {
-	int32_t    max_mode;
-	int32_t    mode;
-	int32_t    attr;
-	int32_t    cursor_col;
-	int32_t    cursor_row;
-	efi_bool_t cursor_visible;
+	efi_i32		max_mode;
+	efi_i32		mode;
+	efi_i32		attr;
+	efi_i32		cursor_col;
+	efi_i32		cursor_row;
+	efi_bool	cursor_visible;
 } efi_simple_text_out_mode;
 
-typedef struct _efi_simple_text_out_protocol efi_simple_text_out_protocol_t;
-struct _efi_simple_text_out_protocol {
-	efi_status_t (efi_func *reset)          (efi_simple_text_out_protocol_t* self, efi_bool_t ext_verf);
-	efi_status_t (efi_func *output_string)  (efi_simple_text_out_protocol_t* self, efi_char16_t* str);
-	efi_status_t (efi_func *test_string)    (efi_simple_text_out_protocol_t* self, efi_char16_t* str);
-	efi_status_t (efi_func *query_mode)     (efi_simple_text_out_protocol_t* self, uintn_t mode_num, uintn_t* cols, uintn_t* rows);
-	efi_status_t (efi_func *set_mode)       (efi_simple_text_out_protocol_t* self, uintn_t mode_num);
-	efi_status_t (efi_func *set_attr)       (efi_simple_text_out_protocol_t* self, uintn_t attr);
-	efi_status_t (efi_func *clear_screen)   (efi_simple_text_out_protocol_t* self);
-	efi_status_t (efi_func *set_cursor_pos) (efi_simple_text_out_protocol_t* self, uintn_t col, uintn_t row);
-	efi_status_t (efi_func *enable_cursor)  (efi_simple_text_out_protocol_t* self, efi_bool_t visible);
+typedef struct efi_simple_text_out_protocol efi_simple_text_out_protocol;
+struct efi_simple_text_out_protocol {
+	efi_status (efiapi *reset)          (efi_simple_text_out_protocol* self, efi_bool ext_verf);
+	efi_status (efiapi *output_string)  (efi_simple_text_out_protocol* self, efi_ch16* str);
+	efi_status (efiapi *test_string)    (efi_simple_text_out_protocol* self, efi_ch16* str);
+	efi_status (efiapi *query_mode)     (efi_simple_text_out_protocol* self, efi_size mode_num, efi_size* cols, efi_size* rows);
+	efi_status (efiapi *set_mode)       (efi_simple_text_out_protocol* self, efi_size mode_num);
+	efi_status (efiapi *set_attr)       (efi_simple_text_out_protocol* self, efi_size attr);
+	efi_status (efiapi *clear_screen)   (efi_simple_text_out_protocol* self);
+	efi_status (efiapi *set_cursor_pos) (efi_simple_text_out_protocol* self, efi_size col, efi_size row);
+	efi_status (efiapi *enable_cursor)  (efi_simple_text_out_protocol* self, efi_bool visible);
 	efi_simple_text_out_mode *mode;
 };
 

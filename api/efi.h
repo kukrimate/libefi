@@ -1,10 +1,14 @@
 /*
  * EFI Structure definitions
  */
-#ifndef __EFI_H
-#define __EFI_H
+#ifndef EFI_H
+#define EFI_H
 
-/* Include CPU specific header */
+/* Freestanding compiler headers */
+#include <stddef.h>
+#include <stdint.h>
+
+/* CPU specific header */
 #if defined __amd64__ || defined _M_AMD64
 	#include <amd64/cpu.h>
 #elif defined __i386__ || defined _M_IX86
@@ -13,60 +17,56 @@
 	#error "Unsupported CPU architecture."
 #endif
 
-// NULL pointer
-#define NULL ((void *) 0)
-
 // EFI handles
-typedef void* efi_handle_t;
-typedef void* efi_event_t;
+typedef void *efi_handle;
+typedef void *efi_event;
 
 // EFI chars
-typedef uint16_t efi_char16_t;
-typedef uint8_t  efi_char8_t;
+typedef efi_u16 efi_ch16;
 
 // EFI bool
-typedef uint8_t efi_bool_t;
-#define true  ((efi_bool_t) 1)
-#define false ((efi_bool_t) 0)
+typedef efi_u8 efi_bool;
+#define true  ((efi_bool) 1)
+#define false ((efi_bool) 0)
 
 // EFI guid
 typedef struct {
-	uint32_t data1;
-	uint16_t data2;
-	uint16_t data3;
-	uint8_t  data4[8];
-} efi_guid_t;
+	efi_u32	data1;
+	efi_u16	data2;
+	efi_u16	data3;
+	efi_u8	data4[8];
+} efi_guid;
 
 // EFI time
 typedef struct {
-	uint16_t year;
-	uint8_t  month;
-	uint8_t  day;
-	uint8_t  hour;
-	uint8_t  minute;
-	uint8_t  second;
-	uint8_t  pad1;
-	uint32_t nanosecond;
-	int16_t  time_zone;
-	uint8_t  daylight;
-	uint8_t  pad2;
-} efi_time_t;
+	efi_u16	year;
+	efi_u8	month;
+	efi_u8	day;
+	efi_u8	hour;
+	efi_u8	minute;
+	efi_u8	second;
+	efi_u8	pad1;
+	efi_u32	nanosecond;
+	efi_i16	time_zone;
+	efi_u8	daylight;
+	efi_u8	pad2;
+} efi_time;
 
 // EFI status
 #include <efi_status.h>
 
-// EFI address
-typedef uint64_t efi_physical_address_t;
+// Physical address
+typedef efi_u64 efi_physical_address;
 
-// allocate type
+// Allocation type
 typedef enum {
 	allocate_any_pages,
 	allocate_max_address,
 	allocate_address,
 	max_allocate_type
-} efi_allocate_type_t;
+} efi_allocate_type;
 
-// memory type
+// Memory type
 typedef enum {
 	efi_reserved_memory_type,
 	efi_loader_code,
@@ -83,19 +83,19 @@ typedef enum {
 	efi_memory_mapped_io_port_space,
 	efi_pal_code,
 	efi_max_memory_type
-} efi_memory_type_t;
+} efi_memory_type;
 
-// locate search type
+// Locate search type
 typedef enum {
 	all_handles,
 	by_register_notify,
 	by_protocol
-} efi_locate_search_type_t;
+} efi_locate_search_type;
 
-// Forward declarations
-typedef struct _efi_system_table efi_system_table_t;
+// Protocol headers depend on the system table
+typedef struct efi_system_table efi_system_table;
 
-// Protocols
+// Protocol headers
 #include <protocol/efi_simple_text_out.h>
 #include <protocol/efi_simple_text_in.h>
 #include <protocol/efi_device_path.h>
@@ -105,31 +105,31 @@ typedef struct _efi_system_table efi_system_table_t;
 
 // EFI tables
 typedef struct {
-	uint64_t signature;
-	uint32_t revision;
-	uint32_t header_size;
-	uint32_t crc32;
-	uint32_t reserved;
-} efi_table_header_t;
+	efi_u64	signature;
+	efi_u32	revision;
+	efi_u32	header_size;
+	efi_u32	crc32;
+	efi_u32	reserved;
+} efi_table_header;
 
 typedef struct {
-	efi_table_header_t hdr;
+	efi_table_header hdr;
 
 	// TPL services
 	void *raise_tpl;
 	void *restore_tpl;
 
 	// Memory allocation services
-	efi_status_t (efi_func *allocate_pages)  (efi_allocate_type_t type, efi_memory_type_t memory_type, uintn_t pages, efi_physical_address_t *memory);
-	efi_status_t (efi_func *free_pages)      (efi_physical_address_t memory, uintn_t pages);
+	efi_status (efiapi *allocate_pages)  (efi_allocate_type type, efi_memory_type memory_type, efi_size pages, efi_physical_address *memory);
+	efi_status (efiapi *free_pages)      (efi_physical_address memory, efi_size pages);
 	void *get_memory_map;
-	efi_status_t (efi_func *allocate_pool)   (efi_memory_type_t pool_type, uintn_t size, void **buffer);
-	efi_status_t (efi_func *free_pool)       (void *buffer);
+	efi_status (efiapi *allocate_pool)   (efi_memory_type pool_type, efi_size size, void **buffer);
+	efi_status (efiapi *free_pool)       (void *buffer);
 
 	// Event services
 	void *create_event;
 	void *set_timer;
-	efi_status_t (efi_func *wait_for_event)  (uintn_t num_events, efi_event_t *event, uintn_t *index);
+	efi_status (efiapi *wait_for_event)  (efi_size num_events, efi_event *event, efi_size *index);
 	void *signal_event;
 	void *close_event;
 	void *check_event;
@@ -138,44 +138,44 @@ typedef struct {
 	void *install_protocol_interface;
 	void *reinstall_protocol_interface;
 	void *uninstall_protocol_interface;
-	efi_status_t (efi_func *handle_protocol) (efi_handle_t handle, efi_guid_t *protocol, void **interface);
+	efi_status (efiapi *handle_protocol) (efi_handle handle, efi_guid *protocol, void **interface);
 	void *reserved;
 	void *register_protocol_notify;
-	efi_status_t (efi_func *locate_handle)   (efi_locate_search_type_t search_type, efi_guid_t *protocol,
-			void *search_key, uintn_t *buffer_size, efi_handle_t *buffer);
+	efi_status (efiapi *locate_handle)   (efi_locate_search_type search_type, efi_guid *protocol,
+			void *search_key, efi_size *buffer_size, efi_handle *buffer);
 	void *locate_device_path;
 	void *install_configuration_table;
 
 	// Image services
-	efi_status_t (efi_func *load_image)         (efi_bool_t boot_policy, efi_handle_t parent_image_handle,
-			efi_device_path_protocol_t *device_path, void *source_buffer, uintn_t source_size, efi_handle_t *image_handle);
-	efi_status_t (efi_func *start_image)        (efi_handle_t image_handle, uintn_t *exit_data_size, efi_char16_t **exit_data);
-	efi_status_t (efi_func *exit)               (efi_handle_t image_handle, efi_status_t exit_status, uintn_t exit_data_size,
-			efi_char16_t *exit_data);
-	efi_status_t (efi_func *unload_image)       (efi_handle_t image_handle);
-	efi_status_t (efi_func *exit_boot_services) (efi_handle_t image_handle, uintn_t map_key);
+	efi_status (efiapi *load_image)         (efi_bool boot_policy, efi_handle parent_image_handle,
+			efi_device_path_protocol *device_path, void *source_buffer, efi_size source_size, efi_handle *image_handle);
+	efi_status (efiapi *start_image)        (efi_handle image_handle, efi_size *exit_data_size, efi_ch16 **exit_data);
+	efi_status (efiapi *exit)               (efi_handle image_handle, efi_status exit_status, efi_size exit_data_size,
+			efi_ch16 *exit_data);
+	efi_status (efiapi *unload_image)       (efi_handle image_handle);
+	efi_status (efiapi *exit_boot_services) (efi_handle image_handle, efi_size map_key);
 
 	// Misc services
 	void *get_next_monotonic_count;
-	efi_status_t (efi_func *stall)              (uintn_t microseconds);
-	efi_status_t (efi_func *set_watchdog_timer) (uintn_t timeout, uint64_t watchdog_code, uintn_t data_size, efi_char16_t *watchdog_data);
-} efi_boot_services_t;
+	efi_status (efiapi *stall)              (efi_size microseconds);
+	efi_status (efiapi *set_watchdog_timer) (efi_size timeout, efi_u64 watchdog_code, efi_size data_size, efi_ch16 *watchdog_data);
+} efi_boot_services;
 
 // EFI system table
-typedef struct _efi_system_table {
-	efi_table_header_t              hdr;
-	efi_char16_t                   *vendor;
-	uint32_t                        revision;
-	efi_handle_t                    con_in_handle;
-	efi_simple_text_in_protocol_t  *con_in;
-	efi_handle_t                    con_out_handle;
-	efi_simple_text_out_protocol_t *con_out;
-	efi_handle_t                    std_err_handle;
-	efi_simple_text_out_protocol_t *std_err;
-	void                           *runtime_services;
-	efi_boot_services_t            *boot_services;
-	uintn_t                         cnt_config_entries;
-	void                           *config_entries;
-} efi_system_table_t;
+struct efi_system_table {
+	efi_table_header		hdr;
+	efi_ch16			*vendor;
+	efi_u32				revision;
+	efi_handle			con_in_handle;
+	efi_simple_text_in_protocol	*con_in;
+	efi_handle			con_out_handle;
+	efi_simple_text_out_protocol	*con_out;
+	efi_handle			std_err_handle;
+	efi_simple_text_out_protocol	*std_err;
+	void				*runtime_services;
+	efi_boot_services		*boot_services;
+	efi_size			cnt_config_entries;
+	void				*config_entries;
+};
 
 #endif

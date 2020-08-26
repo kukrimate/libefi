@@ -1,28 +1,28 @@
 /*
  * EFI file protocol
  */
-#ifndef __EFI_FILE_PROTOCOL_H
-#define __EFI_FILE_PROTOCOL_H
+#ifndef EFI_FILE_PROTOCOL_H
+#define EFI_FILE_PROTOCOL_H
 
-typedef struct _efi_efi_file_protocol efi_file_protocol_t;
-struct _efi_efi_file_protocol {
-	uint64_t revision;
-	efi_status_t (efi_func *open)   (efi_file_protocol_t* self, efi_file_protocol_t **new_handle,
-			efi_char16_t *file_name, uint64_t open_mode, uint64_t attributes);
-	efi_status_t (efi_func *close)  (efi_file_protocol_t* self);
-	efi_status_t (efi_func *delete) (efi_file_protocol_t* self);
-	efi_status_t (efi_func *read)   (efi_file_protocol_t* self, uintn_t *buffer_size, void *buffer);
-	efi_status_t (efi_func *write)  (efi_file_protocol_t* self, uintn_t *buffer_size, void *buffer);
+typedef struct efi_file_protocol efi_file_protocol;
+struct efi_file_protocol {
+	efi_u64	revision;
+	efi_status (efiapi *open)   (efi_file_protocol* self, efi_file_protocol **new_handle,
+			efi_ch16 *file_name, efi_u64 open_mode, efi_u64 attributes);
+	efi_status (efiapi *close)  (efi_file_protocol* self);
+	efi_status (efiapi *delete) (efi_file_protocol* self);
+	efi_status (efiapi *read)   (efi_file_protocol* self, efi_size *buffer_size, void *buffer);
+	efi_status (efiapi *write)  (efi_file_protocol* self, efi_size *buffer_size, void *buffer);
 
-	efi_status_t (efi_func *get_position)  (efi_file_protocol_t* self, uint64_t *position);
-	efi_status_t (efi_func *set_position)  (efi_file_protocol_t* self, uint64_t position);
+	efi_status (efiapi *get_position)  (efi_file_protocol* self, efi_u64 *position);
+	efi_status (efiapi *set_position)  (efi_file_protocol* self, efi_u64 position);
 
-	efi_status_t (efi_func *get_info)  (efi_file_protocol_t* self, efi_guid_t *information_type,
-			uintn_t *buffer_size, void *buffer);
-	efi_status_t (efi_func *set_info)  (efi_file_protocol_t* self, efi_guid_t *information_type,
-			uintn_t buffer_size, void *buffer);
+	efi_status (efiapi *get_info)  (efi_file_protocol* self, efi_guid *information_type,
+			efi_size *buffer_size, void *buffer);
+	efi_status (efiapi *set_info)  (efi_file_protocol* self, efi_guid *information_type,
+			efi_size buffer_size, void *buffer);
 
-	efi_status_t (efi_func *flush)  (efi_file_protocol_t* self);
+	efi_status (efiapi *flush)  (efi_file_protocol* self);
 };
 
 // Open modes
@@ -45,15 +45,15 @@ struct _efi_efi_file_protocol {
     0xc9, 0x69, 0x72, 0x3b }
 
 typedef struct {
-	uint64_t     size;
-	uint64_t     file_size;
-	uint64_t     physical_size;
-	efi_time_t   creation_time;
-	efi_time_t   last_access_time;
-	efi_time_t   modification_time;
-	uint64_t     attribute;
-	efi_char16_t file_name[1];
-} efi_file_info_t;
+	efi_u64		size;
+	efi_u64		file_size;
+	efi_u64		physical_size;
+	efi_time	creation_time;
+	efi_time	last_access_time;
+	efi_time	modification_time;
+	efi_u64		attribute;
+	efi_ch16	file_name[1];
+} efi_file_info;
 
 // File info attribute bits
 #define EFI_FILE_READ_ONLY  0x0000000000000001
@@ -70,7 +70,7 @@ typedef struct {
     0x4D }
 
 typedef struct {
-	efi_char16_t volume_label[1];
-} efi_file_system_volume_label_t;
+	efi_ch16	volume_label[1];
+} efi_file_system_volume_label;
 
 #endif

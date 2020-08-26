@@ -5,7 +5,7 @@ include ../tools/Makefile.efi
 # All target
 all: libefiutil.a
 
-libefiutil.a: util.o
+libefiutil.a: util.o print.o
 	$(AR) -cr $@ $^
 
 # Clean built files

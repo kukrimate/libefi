@@ -2,17 +2,17 @@
  * EFI status code definitions
  */
 
-#ifndef __EFI_STATUS_H
-#define __EFI_STATUS_H
+#ifndef EFI_STATUS_H
+#define EFI_STATUS_H
 
-/* EFI status type */
-typedef uintn_t efi_status_t;
+/* EFI status */
+typedef efi_size efi_status;
 
 /* Macro for defining error codes */
-#define EFIERR(x) (x | MAX_BIT)
+#define EFIERR(x) (x | SIZE_MAX_BIT)
 
 /* Macro for checking if a status code is an error */
-#define EFI_ERROR(x) (((intn_t) x) < 0)
+#define EFI_ERROR(x) (x & SIZE_MAX_BIT)
 
 /* Success status code */
 #define EFI_SUCCESS 0
@@ -56,4 +56,4 @@ typedef uintn_t efi_status_t;
 #define EFI_INVALID_LANGUAGE     EFIERR(32)
 #define EFI_COMPROMISED_DATA     EFIERR(33)
 
-#endif /* API_EFI_STATUS_H_ */
+#endif

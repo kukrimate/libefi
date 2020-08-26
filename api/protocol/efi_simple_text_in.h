@@ -1,19 +1,19 @@
 /*
  * EFI simple text input protocol
  */
-#ifndef __EFI_SIMPLE_TEXT_IN_H
-#define __EFI_SIMPLE_TEXT_IN_H
+#ifndef EFI_SIMPLE_TEXT_IN_H
+#define EFI_SIMPLE_TEXT_IN_H
 
 typedef struct {
-	uint16_t     scan;
-	efi_char16_t c;
-} efi_in_key_t;
+	efi_u16		scan;
+	efi_ch16	c;
+} efi_in_key;
 
-typedef struct _efi_simple_text_in_protocol efi_simple_text_in_protocol_t;
-struct _efi_simple_text_in_protocol {
-	efi_status_t (efi_func *reset)    (efi_simple_text_in_protocol_t* self, efi_bool_t ext_verf);
-	efi_status_t (efi_func *read_key) (efi_simple_text_in_protocol_t* self, efi_in_key_t* key);
-	efi_event_t  wait_for_key;
+typedef struct efi_simple_text_in_protocol efi_simple_text_in_protocol;
+struct efi_simple_text_in_protocol {
+	efi_status (efiapi *reset)    (efi_simple_text_in_protocol *self, efi_bool ext_verf);
+	efi_status (efiapi *read_key) (efi_simple_text_in_protocol *self, efi_in_key *key);
+	efi_event	wait_for_key;
 };
 
 #endif

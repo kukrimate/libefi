@@ -1,28 +1,35 @@
 /*
- * EFI CPU specific definitions for AMD64
+ * Type definitions for AMD64
  */
 
-#ifndef __AMD64_CPU_H
-#define __AMD64_CPU_H
+#ifndef AMD64_CPU_H
+#define AMD64_CPU_H
 
 /* Fixed width types */
-#include <stdint.h>
+typedef uint8_t efi_u8;
+typedef int8_t efi_i8;
+typedef uint16_t efi_u16;
+typedef int16_t efi_i16;
+typedef uint32_t efi_u32;
+typedef int32_t efi_i32;
+typedef uint64_t efi_u64;
+typedef int64_t efi_i64;
 
-/* Native width type */
-typedef int64_t intn_t;
-typedef uint64_t uintn_t;
+/* Size types */
+typedef size_t efi_size;
+typedef ssize_t efi_ssize;
 
-/* Size type */
-typedef uint64_t size_t;
+/*
+ * Max bit for the size type
+ * TODO: make sure size_t is actually 64-bits
+ */
+#define SIZE_MAX_BIT 0x8000000000000000
 
-/* Native max bit */
-#define MAX_BIT 0x8000000000000000
-
-/* EFI function calling convention */
+/* Force the Microsoft AMD64 ABI if it's not the default */
 #if defined __GNUC__ && !defined _WIN32
-#define efi_func __attribute__((ms_abi))
+#define efiapi __attribute__((ms_abi))
 #else
-#define efi_func
+#define efiapi
 #endif
 
 #endif
