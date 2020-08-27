@@ -15,3 +15,6 @@ endif
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
+
+%.o: %.S
+	$(CC) $(ASFLAGS) -c $^ -o $@
