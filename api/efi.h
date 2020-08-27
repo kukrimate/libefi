@@ -179,6 +179,12 @@ typedef struct {
 	efi_status (efiapi *set_watchdog_timer) (efi_size timeout, efi_u64 watchdog_code, efi_size data_size, efi_ch16 *watchdog_data);
 } efi_boot_services;
 
+// EFI configuration table
+typedef struct {
+	efi_guid	vendor_guid;
+	void		*vendor_table;
+} efi_configuration_table;
+
 // EFI system table
 struct efi_system_table {
 	efi_table_header		hdr;
@@ -193,7 +199,7 @@ struct efi_system_table {
 	void				*runtime_services;
 	efi_boot_services		*boot_services;
 	efi_size			cnt_config_entries;
-	void				*config_entries;
+	efi_configuration_table		*config_entries;
 };
 
 #endif
