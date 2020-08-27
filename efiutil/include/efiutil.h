@@ -61,4 +61,7 @@ efi_status
 efiapi
 get_file_info(efi_file_protocol *file, efi_file_info **file_info);
 
+/* Calculate the size of an array */
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
+
 #endif
