@@ -114,6 +114,7 @@ typedef struct efi_system_table efi_system_table;
 #include <protocol/efi_loaded_image.h>
 #include <protocol/efi_file_protocol.h>
 #include <protocol/efi_simple_file_system.h>
+#include <protocol/efi_graphics_output.h>
 
 // EFI tables
 typedef struct {
