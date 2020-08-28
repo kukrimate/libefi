@@ -49,6 +49,22 @@ memcpy(void *dest, void *src, size_t n)
 	return dest;
 }
 
+int
+memcmp(const void *s1, const void *s2, size_t n)
+{
+	const char *p1, *p2;
+
+	if (n) {
+		p1 = s1;
+		p2 = s2;
+		do {
+			if (*p1++ != *p2++)
+				return *--p1 - *--p2;
+		} while (--n);
+	}
+
+	return 0;
+}
 size_t
 strlen(const char *s)
 {

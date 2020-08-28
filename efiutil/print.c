@@ -61,7 +61,7 @@ efi_print(efi_ch16 *fmt, ...)
 {
 	va_list va;
 	_Bool wide;
-	const char *p;
+	efi_guid *guid_ptr;
 
 	va_start(va, fmt);
 	for (; *fmt; ++fmt)
@@ -93,6 +93,19 @@ wide_redo:
 					efi_print_efi_i64(va_arg(va, efi_i64), 10);
 				else
 					efi_print_efi_i32(va_arg(va, efi_i32), 10);
+				break;
+			case L'g':
+				guid_ptr = va_arg(va, efi_guid *);
+				efi_print(L"{ %x, %x, %x, { %x-%x-%x-%x-%x-%x-%x-%x } }",
+					guid_ptr->data1, guid_ptr->data2, guid_ptr->data3,
+					guid_ptr->data4[0],
+					guid_ptr->data4[1],
+					guid_ptr->data4[2],
+					guid_ptr->data4[3],
+					guid_ptr->data4[4],
+					guid_ptr->data4[5],
+					guid_ptr->data4[6],
+					guid_ptr->data4[7]);
 				break;
 			case L'%':
 				efi_putchar(L'%');
