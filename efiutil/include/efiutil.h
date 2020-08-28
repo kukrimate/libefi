@@ -1,67 +1,76 @@
-#ifndef __EFIUTIL_H
-#define __EFIUTIL_H
+/*
+ * UEFI dependent helper functions
+ */
+#ifndef EFIUTIL_H
+#define EFIUTIL_H
 
-// globals
+/*
+ * Globals for accessing UEFI
+ */
 extern efi_handle self_image_handle;
-extern efi_loaded_image_protocol *self_loaded_image;
-extern efi_simple_file_system_protocol *self_volume;
-extern efi_file_protocol *self_root_dir;
 extern efi_system_table *st;
 extern efi_boot_services *bs;
 
-/* Initialize and deinitialize util structures */
-void init_util(efi_handle image_handle, efi_system_table *system_table);
-void fini_util();
+/*
+ * Must be called before using the globals above
+ */
+void
+efi_init(efi_handle image_handle, efi_system_table *system_table);
 
-/* Simple printf like function */
-void print(efi_ch16 *format, ...);
+/*
+ * Like printf, but uses UEFI strings
+ */
+void
+efi_print(efi_ch16 *format, ...);
 
-/* Exit with status after printing error_msg */
-void abort(efi_ch16 *error_msg, efi_status status);
+/*
+ * Print error_msg, then exit with status
+ */
+void
+efi_abort(efi_ch16 *error_msg, efi_status status);
 
-/* Zero a len sized memory region pointed to by buffer */
-void bzero(void *buffer, efi_size len);
+/*
+ * Allocate an n byte memory region
+ */
+void *
+efi_alloc(efi_size n);
 
-/* Copy n bytes from src to dest */
-void memcpy(void *dest, void *src, efi_size n);
+/*
+ * Free the memory region pointed to by ptr
+ */
+void
+efi_free(void *ptr);
 
-/* Allocate a size sized memory region */
-void *malloc(efi_size size);
-
-/* Free the memory region pointed to by buffer */
-void free(void *buffer);
-
-/* Allocate a newsize sized memory region and copy over oldsize bytes
- * from oldptr and free the region pointed to by oldptr
- * if oldptr is null just allocate the new region and return */
-void *realloc(void *oldptr, efi_size oldsize, efi_size newsize);
+/*
+ * Resize a memory region from oldsize to newsize
+ */
+void *
+efi_realloc(void *oldptr, efi_size oldsize, efi_size newsize);
 
 /* Determine the length of an EFI string pointed to by str */
-efi_size strlen(efi_ch16 *str);
+efi_size
+efi_strlen(efi_ch16 *str);
 
 /* Determine how many a bytes an EFI string takes to store
  *  including the null-terminator */
-efi_size strsize(efi_ch16 *str);
-
-/* Determine the length of an ASCII string pointed to by str */
-efi_size ascii_strlen(char *str);
+efi_size
+efi_strsize(efi_ch16 *str);
 
 /* Allocate a buffer to store the device paths pointed first and second and merge them */
-efi_device_path_protocol *merge_device_paths(efi_device_path_protocol *first, efi_device_path_protocol *second);
+efi_device_path_protocol *
+merge_device_paths(efi_device_path_protocol *first, efi_device_path_protocol *second);
 
 /* Generate a file path device path from a string file path and merge it
  * with the device path pointed to by base */
-efi_device_path_protocol *append_filepath_device_path(efi_device_path_protocol *base, efi_ch16 *file_path);
+efi_device_path_protocol *
+append_filepath_device_path(efi_device_path_protocol *base, efi_ch16 *file_path);
 
 /* Locate all EFI handles that support the specified protocol */
-efi_status locate_all_handles(efi_guid *protocol, efi_size *num_handles, efi_handle **out_buffer);
+efi_status
+locate_all_handles(efi_guid *protocol, efi_size *num_handles, efi_handle **out_buffer);
 
 /* Get the file info struct for file */
 efi_status
-efiapi
 get_file_info(efi_file_protocol *file, efi_file_info **file_info);
-
-/* Calculate the size of an array */
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
 
 #endif

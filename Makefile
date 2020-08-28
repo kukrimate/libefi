@@ -10,5 +10,5 @@ all:
 .PHONY: clean
 clean:
 	for MOD in $(MODULES); do \
-		make -C $$MOD/ all; \
+		make -C $$MOD/ clean; \
 	done

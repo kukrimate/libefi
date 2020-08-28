@@ -4,7 +4,7 @@
 
 static
 void
-putchar(efi_ch16 ch)
+efi_putchar(efi_ch16 ch)
 {
 	efi_ch16 buffer[2];
 
@@ -15,88 +15,100 @@ putchar(efi_ch16 ch)
 
 static
 void
-puts(efi_ch16 *str)
+efi_puts(efi_ch16 *str)
 {
 	st->con_out->output_string(st->con_out, str);
 }
 
-static const efi_ch16 num_lookup[] = L"0123456789abcdef";
-
 static
-void
-printptr(uintptr_t ptr)
-{
-	for (int i = sizeof(ptr) * 8; i; i -= 4) {
-		putchar(num_lookup[(ptr >> (i - 4)) & 0xf]);
-	}
+efi_ch16 *digits = L"0123456789abcdef";
+
+#define genprint_type(U, S) \
+static \
+void \
+efi_print_##U(U num, int base) \
+{ \
+	efi_ch16 buf[20], *p; \
+\
+	p = buf + sizeof(buf); \
+	*--p = 0; \
+\
+	do { \
+		*--p = digits[num % base]; \
+	} while (p >= buf && (num /= base)); \
+\
+	for (; *p; ++p) \
+		efi_putchar(*p); \
+} \
+\
+static \
+void \
+efi_print_##S(S num, int base) \
+{ \
+	if (num < 0) { \
+		efi_putchar(L'-'); \
+		num *= -1; \
+	} \
+	efi_print_##U(num, base); \
 }
 
-static
-void
-printusig(unsigned n, unsigned b)
-{
-	char buf[10], *p = buf;
-
-	do {
-		*p++ = num_lookup[n % b];
-	} while (n /= b);
-
-	--p;
-	for (; buf <= p; --p)
-		putchar(*p);
-}
-
-static
-void
-printsig(int n, unsigned b)
-{
-	if (n < 0) {
-		n *= -1;
-		putchar('-');
-	}
-	printusig(n, b);
-}
+genprint_type(efi_u32, efi_i32)
+genprint_type(efi_u64, efi_i64)
 
 void
-print(efi_ch16 *format, ...)
+efi_print(efi_ch16 *fmt, ...)
 {
-	va_list ap;
+	va_list va;
+	_Bool wide;
+	const char *p;
 
-	va_start(ap, format);
-
-	for (; *format; ++format) {
-		if (*format == '%')
-			switch (*++format) {
-			case 'c':
-				putchar((efi_ch16) va_arg(ap, int));
+	va_start(va, fmt);
+	for (; *fmt; ++fmt)
+		switch (*fmt) {
+		case L'%':
+			wide = 0;
+wide_redo:
+			switch (*++fmt) {
+			case L'l':
+				wide = 1;
+				goto wide_redo;
+			case L'c':
+				efi_putchar(va_arg(va, int));
 				break;
-			case 's':
-			case 'S':
-				puts(va_arg(ap, efi_ch16 *));
+			case L's':
+				efi_puts(va_arg(va, efi_ch16 *));
 				break;
-			case 'p':
-				printptr(va_arg(ap, uintptr_t));
+			case L'p':
+				efi_print_efi_u64(va_arg(va, efi_u64), 16);
 				break;
-			case 'x':
-				printusig(va_arg(ap, unsigned), 16);
+			case L'x':
+				if (wide)
+					efi_print_efi_u64(va_arg(va, efi_u64), 16);
+				else
+					efi_print_efi_u32(va_arg(va, efi_u32), 16);
 				break;
-			case 'd':
-				printsig(va_arg(ap, int), 10);
+			case L'd':
+				if (wide)
+					efi_print_efi_i64(va_arg(va, efi_i64), 10);
+				else
+					efi_print_efi_i32(va_arg(va, efi_i32), 10);
 				break;
-			case 'u':
-				printusig(va_arg(ap, unsigned), 10);
+			case L'%':
+				efi_putchar(L'%');
 				break;
 			default:
-				putchar('?');
+				efi_putchar(L'?');
 				break;
 			}
-		else if (*format == '\r') /* Hide CRLF */
-			continue;
-		else if (*format == '\n')
-			puts(L"\r\n");
-		else
-			putchar(*format);
-	}
-
-	va_end(ap);
+			break;
+		case '\r': /* Ignore CR */
+			break;
+		case L'\n': /* Write CRLF on LF */
+			efi_puts(L"\r\n");
+			break;
+		default:
+			efi_putchar(*fmt);
+			break;
+		}
+	va_end(va);
 }
