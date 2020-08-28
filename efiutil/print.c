@@ -1,5 +1,6 @@
 #include <efi.h>
 #include <efiutil.h>
+#include <khelper.h>
 #include <stdarg.h>
 
 static
@@ -30,7 +31,7 @@ efi_print_##U(U num, int base) \
 { \
 	efi_ch16 buf[20], *p; \
 \
-	p = buf + sizeof(buf); \
+	p = buf + ARRAY_SIZE(buf); \
 	*--p = 0; \
 \
 	do { \
