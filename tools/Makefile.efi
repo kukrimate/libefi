@@ -3,7 +3,7 @@ LD      = x86_64-w64-mingw32-ld
 AR      = x86_64-w64-mingw32-ar
 CFLAGS  = -I../api -I../efiutil/include -ffreestanding -fno-stack-protector \
  -fshort-wchar
-LDFLAGS = -shared --image-base 0x400000 -e efi_main -subsystem 10
+LDFLAGS = -shared --image-base 0x400000 -e efi_main -subsystem $(SUBSYSTEM)
 LIBS = -L../efiutil -lefiutil
 
 ifeq ($(shell uname -m),x86_64)
