@@ -47,29 +47,55 @@ efi_free(void *ptr);
 void *
 efi_realloc(void *oldptr, efi_size oldsize, efi_size newsize);
 
-/* Determine the length of an EFI string pointed to by str */
+/*
+ * Determine the length of an EFI string pointed to by str
+ */
 efi_size
 efi_strlen(efi_ch16 *str);
 
-/* Determine how many a bytes an EFI string takes to store
- *  including the null-terminator */
+/*
+ * Determine how many a bytes an EFI string takes to store
+ *  including the null-terminator
+ */
 efi_size
 efi_strsize(efi_ch16 *str);
 
-/* Allocate a buffer to store the device paths pointed first and second and merge them */
+/*
+ * Allocate a buffer to store the device paths pointed first
+ * and second and merge them
+ */
 efi_device_path_protocol *
-merge_device_paths(efi_device_path_protocol *first, efi_device_path_protocol *second);
+merge_device_paths(
+	efi_device_path_protocol *first,
+	efi_device_path_protocol *second);
 
-/* Generate a file path device path from a string file path and merge it
- * with the device path pointed to by base */
+/*
+ * Generate a file path device path from a string file path and merge it
+ * with the device path pointed to by base
+ */
 efi_device_path_protocol *
-append_filepath_device_path(efi_device_path_protocol *base, efi_ch16 *file_path);
+append_filepath_device_path(
+	efi_device_path_protocol *base,
+	efi_ch16 *file_path);
 
-/* Locate all EFI handles that support the specified protocol */
+/*
+ * Locate all EFI handles that support the specified protocol
+ */
 efi_status
-locate_all_handles(efi_guid *protocol, efi_size *num_handles, efi_handle **out_buffer);
+locate_all_handles(
+	efi_guid *protocol,
+	efi_size *num_handles,
+	efi_handle **out_buffer);
 
-/* Get the file info struct for file */
+/*
+ * Locate the first instance of a protocol
+ */
+efi_status
+locate_protocol(efi_guid *protocol, void **iface);
+
+/*
+ * Get the file info struct for file
+ */
 efi_status
 get_file_info(efi_file_protocol *file, efi_file_info **file_info);
 

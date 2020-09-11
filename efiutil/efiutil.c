@@ -183,6 +183,31 @@ retry:
 }
 
 efi_status
+locate_protocol(efi_guid *protocol, void **iface)
+{
+	efi_status status;
+	efi_size handle_cnt;
+	efi_handle *handle_buf;
+
+	handle_buf = NULL;
+	status = locate_all_handles(protocol, &handle_cnt, &handle_buf);
+	if (EFI_ERROR(status))
+		goto done;
+	if (!handle_cnt) {
+		status = EFI_NOT_FOUND;
+		goto done;
+	}
+
+	status = bs->handle_protocol(handle_buf[0], protocol, iface);
+
+done:
+	if (handle_buf)
+		efi_free(handle_buf);
+
+	return status;
+}
+
+efi_status
 get_file_info(efi_file_protocol *file, efi_file_info **file_info)
 {
 	efi_status status;
