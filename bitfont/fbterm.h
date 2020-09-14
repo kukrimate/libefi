@@ -4,8 +4,6 @@
 struct fbinfo {
 	/* Physical address of the framebuffer */
 	uint64_t base;
-	/* Size of the framebuffer in bytes */
-	uint32_t size;
 	/* Horizontal and vertical resolution */
 	uint32_t x_limit, y_limit;
 	/* Length of one line in bytes */

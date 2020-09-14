@@ -21,8 +21,6 @@ gop_to_fbinfo(struct fbinfo *fb)
 	if (EFI_ERROR(status))
 		goto done;
 
-	gop->set_mode(gop, 11);
-
 	switch (gop->mode->info->pixel_format) {
 	case pixel_red_green_blue_reserved_8_bit_per_color:
 		fb->red_idx = 0;
@@ -40,7 +38,6 @@ gop_to_fbinfo(struct fbinfo *fb)
 	}
 
 	fb->base = gop->mode->frame_buffer_base;
-	fb->size = gop->mode->frame_buffer_size;
 	fb->x_limit = gop->mode->info->horizontal_resolution;
 	fb->y_limit = gop->mode->info->vertical_resolution;
 	fb->linewidth = gop->mode->info->pixels_per_scan_line * EFI_GOP_PIXELWIDTH;
