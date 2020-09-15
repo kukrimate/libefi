@@ -1,4 +1,4 @@
-MODULES := efiutil yaub IntelSpiInfo
+MODULES := efiutil bitfont loadlin
 
 .PHONY: all
 all:

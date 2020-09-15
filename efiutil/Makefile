@@ -1,3 +1,4 @@
+LIBEFI := ..
 include ../tools/Makefile.efi
 
 OBJ := efiutil.o string.o print.o

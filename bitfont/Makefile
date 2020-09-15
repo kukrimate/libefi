@@ -1,7 +1,8 @@
+LIBEFI := ..
 include ../tools/Makefile.efi
 
 # Application
-APP := hdd/efi/boot/bootx64.efi
+APP := bitfont.efi
 
 # Subsystem ID (EFI Application)
 SUBSYSTEM := 10

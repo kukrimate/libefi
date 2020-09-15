@@ -1,3 +1,4 @@
+LIBEFI := ..
 include ../tools/Makefile.efi
 
 # Revision identifier
@@ -6,8 +7,10 @@ CFLAGS += -DGIT_REV=L\"git.$(shell git rev-parse --short HEAD)\"
 # EFI Application
 SUBSYSTEM := 10
 
-APP := hdd/efi/boot/bootx64.efi
+APP := loadlin.efi
 OBJ := loadlin.o
+
+all: $(APP)
 
 $(APP): $(OBJ)
 	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS)
