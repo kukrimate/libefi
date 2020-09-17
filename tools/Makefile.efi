@@ -2,7 +2,8 @@ CC      = x86_64-w64-mingw32-gcc
 LD      = x86_64-w64-mingw32-ld
 AR      = x86_64-w64-mingw32-ar
 CFLAGS  = -I$(LIBEFI)/api -I$(LIBEFI)/efiutil/include \
-		-ffreestanding -fno-stack-protector -fshort-wchar
+		-ffreestanding -fno-stack-protector -fshort-wchar \
+		-mgeneral-regs-only
 LDFLAGS = -shared --image-base 0x400000 -e efi_main -subsystem $(SUBSYSTEM)
 LIBS    = -L$(LIBEFI)/efiutil -lefiutil
 
