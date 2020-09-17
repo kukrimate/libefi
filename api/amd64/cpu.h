@@ -16,12 +16,11 @@ typedef uint64_t efi_u64;
 typedef int64_t efi_i64;
 
 /* Size types */
-typedef size_t efi_size;
-typedef ssize_t efi_ssize;
+typedef uint64_t efi_size;
+typedef int64_t efi_ssize;
 
 /*
  * Max bit for the size type
- * TODO: make sure size_t is actually 64-bits
  */
 #define SIZE_MAX_BIT 0x8000000000000000
 
