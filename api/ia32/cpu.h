@@ -12,6 +12,8 @@ typedef uint16_t efi_u16;
 typedef int16_t efi_i16;
 typedef uint32_t efi_u32;
 typedef int32_t efi_i32;
+typedef uint64_t efi_u64;
+typedef int64_t efi_i64;
 
 /* Size types */
 typedef uint32_t efi_size;

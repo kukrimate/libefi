@@ -1,5 +1,9 @@
+ifneq ($(ARCH), x86_64)
+$(error loadlin only work on x86_64)
+endif
+
 LIBEFI := ..
-include ../tools/Makefile.efi
+include ../tools/Makefile-$(ARCH).efi
 
 # Revision identifier
 CFLAGS += -DGIT_REV=L\"git.$(shell git rev-parse --short HEAD)\"
@@ -10,10 +14,12 @@ SUBSYSTEM := 10
 APP := loadlin.efi
 OBJ := loadlin.o
 
+.PHONY: all
 all: $(APP)
 
 $(APP): $(OBJ)
-	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS)
+	$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
 
+.PHONY: clean
 clean:
 	rm -f $(APP) $(OBJ)

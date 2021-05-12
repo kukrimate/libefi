@@ -1,16 +1,12 @@
 LIBEFI := ..
-include ../tools/Makefile.efi
+include ../tools/Makefile-$(ARCH).efi
 
-OBJ := efiutil.o string.o print.o
+.PHONY: all
+all: libefiutil-$(ARCH).a
 
-.PHONY: all clean
-
-# All target
-all: libefiutil.a
-
-libefiutil.a: $(OBJ)
+libefiutil-$(ARCH).a: efiutil.o string.o print.o
 	$(AR) -cr $@ $^
 
-# Clean built files
+.PHONY: clean
 clean:
 	rm -f *.o *.a
