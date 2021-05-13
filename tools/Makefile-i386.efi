@@ -1,0 +1,14 @@
+CC = i686-w64-mingw32-gcc
+AR = i686-w64-mingw32-ar
+
+CFLAGS  = -I$(LIBEFI)/api -I$(LIBEFI)/efiutil/include \
+	-ffreestanding -fno-stack-protector -fshort-wchar -mgeneral-regs-only
+LDFLAGS = -shared -e _efi_main  -T $(LIBEFI)/tools/i386-efi.ld \
+	-Wl,--image-base,0x400000 -Wl,-subsystem,$(SUBSYSTEM)
+LIBS    = -L$(LIBEFI)/efiutil -lefiutil-i386 -lgcc
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+%.o: %.S
+	$(CC) $(ASFLAGS) -c $^ -o $@

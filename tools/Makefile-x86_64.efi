@@ -1,0 +1,15 @@
+CC = x86_64-w64-mingw32-gcc
+AR = x86_64-w64-mingw32-ar
+
+CFLAGS  = -I$(LIBEFI)/api -I$(LIBEFI)/efiutil/include \
+	-ffreestanding -fno-stack-protector -fshort-wchar -mgeneral-regs-only \
+    -mno-red-zone
+LDFLAGS = -shared -e efi_main -T $(LIBEFI)/tools/x86_64-efi.ld \
+	-Wl,--image-base,0x400000 -Wl,-subsystem,$(SUBSYSTEM)
+LIBS    = -L$(LIBEFI)/efiutil -lefiutil-x86_64 -lgcc
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+%.o: %.S
+	$(CC) $(ASFLAGS) -c $^ -o $@
