@@ -1,11 +1,21 @@
 CC = x86_64-w64-mingw32-gcc
-AR = x86_64-w64-mingw32-ar
+AR = ar
 
-CFLAGS  = -I$(LIBEFI)/api -I$(LIBEFI)/efiutil/include \
-	-ffreestanding -fno-stack-protector -fshort-wchar -mgeneral-regs-only
-LDFLAGS = -shared -e efi_main -T $(LIBEFI)/tools/x86_64-efi.ld \
-	-Wl,--image-base,0x400000 -Wl,-subsystem,$(SUBSYSTEM)
-LIBS    = -L$(LIBEFI)/efiutil -lefiutil-x86_64 -lgcc
+CFLAGS = \
+	-I$(LIBEFI)/api \
+	-I$(LIBEFI)/api/amd64 \
+	-I$(LIBEFI)/efiutil/include \
+	-ffreestanding -fshort-wchar -fno-stack-protector \
+	-mgeneral-regs-only
+
+LDFLAGS = \
+	-nostdlib \
+	-Wl,-shared \
+	-Wl,-entry,efi_main \
+	-Wl,-subsystem,$(SUBSYSTEM) \
+	-Wl,-T,$(LIBEFI)/tools/x86_64-efi.ld
+
+LIBS = -L$(LIBEFI)/efiutil -lefiutil-x86_64 -lgcc
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@

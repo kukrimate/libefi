@@ -9,13 +9,7 @@
 #include <stdint.h>
 
 /* CPU specific header */
-#if defined __amd64__ || defined _M_AMD64
-	#include <amd64/cpu.h>
-#elif defined __i386__ || defined _M_IX86
-	#include <ia32/cpu.h>
-#else
-	#error "Unsupported CPU architecture."
-#endif
+#include <cpu.h>
 
 // EFI handles
 typedef void *efi_handle;
