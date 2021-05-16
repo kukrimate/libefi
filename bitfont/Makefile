@@ -1,8 +1,9 @@
+ARCH ?= x86_64
 LIBEFI := ..
 include ../tools/Makefile-$(ARCH).efi
 
 # Application
-APP := bitfont.efi
+APP := bitfont$(EXT)
 
 # Subsystem ID (EFI Application)
 SUBSYSTEM := 10
@@ -15,4 +16,4 @@ $(APP): bitfont.o fbterm.o
 
 .PHONY: clean
 clean:
-	rm -f *.o $(APP)
+	rm -f *.o *.efi

@@ -5,7 +5,7 @@ ARCH    ?= x86_64
 MODULES := efiutil bitfont
 
 # x86_64 only loader example
-ifeq (ARCH, x86_64)
+ifeq ($(ARCH), x86_64)
 MODULES += loadlin
 endif
 

@@ -1,6 +1,8 @@
 CC = x86_64-w64-mingw32-gcc
 AR = ar
 
+EXT = x64.efi
+
 CFLAGS = \
 	-I$(LIBEFI)/api \
 	-I$(LIBEFI)/api/amd64 \

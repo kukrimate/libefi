@@ -1,6 +1,8 @@
 CC = i686-w64-mingw32-gcc
 AR = ar
 
+EXT = ia32.efi
+
 CFLAGS = \
 	-I$(LIBEFI)/api \
 	-I$(LIBEFI)/api/ia32 \

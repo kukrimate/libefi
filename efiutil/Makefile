@@ -1,3 +1,4 @@
+ARCH ?= x86_64
 LIBEFI := ..
 include ../tools/Makefile-$(ARCH).efi
 
