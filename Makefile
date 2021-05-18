@@ -2,7 +2,7 @@
 ARCH    ?= x86_64
 
 # Architecture independent examples
-MODULES := efiutil bitfont
+MODULES := efiutil hello bitfont
 
 # x86_64 only loader example
 ifeq ($(ARCH), x86_64)
