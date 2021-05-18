@@ -209,6 +209,8 @@ static int load_pe_sections(int fd, void *image)
     return 0;
 }
 
+extern efi_system_table uemu_st;
+
 int main(int argc, char *argv[])
 {
     int err = 1;
@@ -273,10 +275,14 @@ int main(int argc, char *argv[])
         abort(); // TODO: implement base relocations
     }
 
+    puts("\nOutput below from image:\n========================\n");
+
     // Call image entry point
     efi_image_entry entry_point =
         image_addr + nthdrs64.OptionalHeader.AddressOfEntryPoint;
-    entry_point(NULL, NULL);
+
+    efi_status exit_code = entry_point(NULL, &uemu_st);
+    printf("\n========================\nImage exited with code: %ld\n", exit_code);
 
     err = 0;
 out_close:

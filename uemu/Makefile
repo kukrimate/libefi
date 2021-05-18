@@ -8,7 +8,7 @@ CFLAGS := \
 .PHONY: all
 all: uemu
 
-uemu: uemu.o
+uemu: uemu.o efiemu.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
