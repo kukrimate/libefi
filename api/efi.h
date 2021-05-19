@@ -50,6 +50,12 @@ typedef struct {
     efi_u8  pad2;
 } efi_time;
 
+typedef struct {
+    efi_u32  resolution;
+    efi_u32  accuracy;
+    efi_bool sets_to_zero;
+} efi_time_cap;
+
 // EFI status
 #include <efi_status.h>
 
@@ -239,6 +245,58 @@ typedef struct {
         efi_ch16 *watchdog_data);
 } efi_boot_services;
 
+// Types of resets
+typedef enum {
+    efi_reset_cold,
+    efi_reset_warm,
+    efi_reset_shutdown,
+    efi_reset_platform_specific,
+} efi_reset_type;
+
+typedef struct {
+    efi_table_header hdr;
+
+    // Time services
+    efi_status (efiapi *get_time)(efi_time *time, efi_time_cap *cap);
+    efi_status (efiapi *set_time)(efi_time *time);
+    efi_status (efiapi *get_wakeup_time)(efi_bool *enabled, efi_bool *pending, efi_time *time);
+    efi_status (efiapi *set_wakeup_time)(efi_bool enable, efi_time *time);
+
+    // Virtual memory services
+    efi_status (efiapi *set_virtual_address_map)(
+        efi_size memory_map_size,
+        efi_size desc_size,
+        efi_size desc_version,
+        efi_memory_descriptor *virtual_map);
+    efi_status (efiapi *convert_pointer)(efi_size debug_disposition, void **address);
+
+    // Variable services
+    efi_status (efiapi *get_variable)(
+        efi_ch16 *variable_name,
+        efi_guid *vendor_guid,
+        efi_u32 *attrib,
+        efi_size *data_size,
+        void *data);
+    efi_status (efiapi *get_next_variable_name)(
+        efi_size *variable_name_size,
+        efi_ch16 *variable_name,
+        efi_guid *vendor_guid);
+    efi_status (efiapi *set_variable)(
+        efi_ch16 *variable_name,
+        efi_guid *vendor_guid,
+        efi_u32 attrib,
+        efi_size data_size,
+        void *data);
+
+    // Misc services
+    efi_status (efiapi *get_next_high_monotonic_count)(efi_u32 *high_count);
+    void (efiapi *reset_system)(
+        efi_reset_type reset_type,
+        efi_status reset_status,
+        efi_size data_SIZE,
+        void *reset_data);
+} efi_runtime_services;
+
 // EFI configuration table
 typedef struct {
     efi_guid    vendor_guid;
@@ -256,7 +314,7 @@ struct efi_system_table {
     efi_simple_text_out_protocol *con_out;
     efi_handle                   std_err_handle;
     efi_simple_text_out_protocol *std_err;
-    void                         *runtime_services;
+    efi_runtime_services         *runtime_services;
     efi_boot_services            *boot_services;
     efi_size                     cnt_config_entries;
     efi_configuration_table      *config_entries;
