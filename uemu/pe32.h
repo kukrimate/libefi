@@ -371,11 +371,16 @@ typedef struct _IMAGE_SECTION_HEADER {
 // Based relocation format.
 //
 
-//@[comment("MVI_tracked")]
+
+typedef struct {
+    u16 Offset : 12;
+    u16 Type   : 4;
+} BaseRelocTypeOffset;
+
 typedef struct _IMAGE_BASE_RELOCATION {
-    u32   VirtualAddress;
-    u32   SizeOfBlock;
-//  u16   TypeOffset[1];
+    u32                 VirtualAddress;
+    u32                 SizeOfBlock;
+    BaseRelocTypeOffset Fixups[];
 } IMAGE_BASE_RELOCATION;
 
 //

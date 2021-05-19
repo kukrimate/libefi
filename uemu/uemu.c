@@ -211,6 +211,49 @@ static int load_pe_sections(int fd, void *image)
     return 0;
 }
 
+// Apply base relocations
+static int apply_pe_relocs(u64 orig_base, void *image)
+{
+    IMAGE_NT_HEADERS64 *nthdrs = image + ((IMAGE_DOS_HEADER *) image)->e_lfanew;
+
+    // Data directory entry for the base relocations
+    IMAGE_DATA_DIRECTORY *reloc_dir =
+        nthdrs->OptionalHeader.DataDirectory + IMAGE_DIRECTORY_ENTRY_BASERELOC;
+
+    u32 total_size = reloc_dir->Size;
+    IMAGE_BASE_RELOCATION *block = image + reloc_dir->VirtualAddress;
+
+    while (total_size > sizeof *block) {
+        u32 block_size = block->SizeOfBlock;
+        if (total_size < block_size)
+            return ERR_INVALID;
+
+        // Apply block
+        printf("Applying reloc block for RVA: %08x\n", block->VirtualAddress);
+        u32 reloc_cnt = (block_size - sizeof *block) / sizeof(u16);
+        for (u32 i = 0; i < reloc_cnt; ++i) {
+            printf("Type: %02d  Offset: %08x\n",
+                block->Fixups[i].Type, block->Fixups[i].Offset);
+            switch (block->Fixups[i].Type) {
+            case IMAGE_REL_BASED_ABSOLUTE: // Do nothing
+                break;
+            case IMAGE_REL_BASED_DIR64:    // Difference to 64-bit field
+                *(u64 *) (image + block->VirtualAddress + block->Fixups[i].Offset)
+                             += (u64) image - orig_base;
+                break;
+            default:                       // Unsupported type
+                return ERR_INVALID;
+            }
+        }
+
+        // Move to next block
+        block = (void *) block + block_size;
+        total_size -= block_size;
+    }
+
+    return 0;
+}
+
 // EFI API emulator
 extern efi_system_table uemu_st;
 void uemu_expose_protocol(efi_guid *with_guid, void *interface);
@@ -259,7 +302,7 @@ int main(int argc, char *argv[])
 
     // Map memory for image
     u64 orig_base = nthdrs64.OptionalHeader.ImageBase;
-    void *image_addr = mmap_aligned((void *) orig_base,
+    void *image_addr = mmap_aligned(NULL/*(void *) orig_base*/,
                                nthdrs64.OptionalHeader.SectionAlignment,
                                nthdrs64.OptionalHeader.SizeOfImage);
 
@@ -288,7 +331,10 @@ int main(int argc, char *argv[])
     // Perform base relocations if necessary
     if (orig_base != (u64) image_addr) {
         puts("Performing base relocations...");
-        abort(); // TODO: implement base relocations
+        if (apply_pe_relocs(orig_base, image_addr) < 0) {
+            fputs("Failed to apply base relocations!\n", stderr);
+            goto out_close;
+        }
     }
 
     // Catch SIGINT
