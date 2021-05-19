@@ -209,7 +209,13 @@ static int load_pe_sections(int fd, void *image)
     return 0;
 }
 
+// EFI API emulator
 extern efi_system_table uemu_st;
+void uemu_expose_protocol(efi_guid *with_guid, void *interface);
+
+// Graphics output emulator
+efi_graphics_output_protocol *gopemu_init(void);
+void gopemu_deinit(efi_graphics_output_protocol *self);
 
 int main(int argc, char *argv[])
 {
@@ -275,14 +281,26 @@ int main(int argc, char *argv[])
         abort(); // TODO: implement base relocations
     }
 
-    puts("\nOutput below from image:\n========================\n");
+    // Initialize graphics output emulator
+    efi_graphics_output_protocol *gop = gopemu_init();
+    uemu_expose_protocol(&(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID, gop);
 
+    puts("\nOutput below from image:\n========================\n");
     // Call image entry point
     efi_image_entry entry_point =
         image_addr + nthdrs64.OptionalHeader.AddressOfEntryPoint;
 
-    efi_status exit_code = entry_point(NULL, &uemu_st);
-    printf("\n========================\nImage exited with code: %ld\n", exit_code);
+    efi_ssize exit_code = entry_point(NULL, &uemu_st);
+    if (EFI_ERROR(exit_code)) {
+        exit_code &= ~SIZE_MAX_BIT;
+        exit_code *= -1;
+    }
+
+    printf("\n========================\n");
+    printf("Image exited with code: %ld\n", exit_code);
+
+    // Shutdown GOP emulator
+    gopemu_deinit(gop);
 
     err = 0;
 out_close:
