@@ -61,7 +61,7 @@ typedef struct efi_graphics_output_protocol efi_graphics_output_protocol;
 struct efi_graphics_output_protocol {
 	efi_status (efiapi *query_mode)(
 		efi_graphics_output_protocol *self,
-		efi_u32 mdoe_number,
+		efi_u32 mode_number,
 		efi_size *size_of_info,
 		efi_graphics_output_mode_information **info);
 	efi_status (efiapi *set_mode)(
