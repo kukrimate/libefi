@@ -1,3 +1,6 @@
+# Artifacts
 *.o
 *.a
 *.efi
+# Testing
+test

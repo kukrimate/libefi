@@ -3,7 +3,7 @@ LIBEFI := ..
 CFLAGS := \
 	-I$(LIBEFI)/api \
 	-I$(LIBEFI)/api/amd64 \
-	-std=c99 -Wall -Wno-missing-braces \
+	-std=c99 -Wall -Wno-missing-braces -fshort-wchar \
 	-D_GNU_SOURCE -pthread -g \
 	$(shell pkg-config --cflags sdl2)
 LDFLAGS := -pthread

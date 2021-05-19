@@ -8,6 +8,7 @@
 efi_handle self_image_handle;
 efi_system_table *st;
 efi_boot_services *bs;
+efi_runtime_services *rt;
 
 void
 efi_init(efi_handle image_handle, efi_system_table *system_table)
@@ -15,6 +16,7 @@ efi_init(efi_handle image_handle, efi_system_table *system_table)
 	self_image_handle = image_handle;
 	st = system_table;
 	bs = system_table->boot_services;
+	rt = system_table->runtime_services;
 }
 
 void
@@ -67,6 +69,16 @@ efi_realloc(void *oldptr, efi_size oldsize, efi_size newsize)
 
 	/* Return the pointer to the new memory region */
 	return newptr;
+}
+
+efi_ssize efi_strcmp(efi_ch16 *str1, efi_ch16 *str2)
+{
+    while (*str1 == *str2++) {
+        if (*str1++ == 0) {
+            return 0;
+        }
+    }
+    return *str1 - str2[-1];
 }
 
 efi_size

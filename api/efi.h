@@ -293,7 +293,7 @@ typedef struct {
     void (efiapi *reset_system)(
         efi_reset_type reset_type,
         efi_status reset_status,
-        efi_size data_SIZE,
+        efi_size data_size,
         void *reset_data);
 } efi_runtime_services;
 

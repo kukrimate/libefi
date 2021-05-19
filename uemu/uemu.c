@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <setjmp.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -217,6 +219,14 @@ void uemu_expose_protocol(efi_guid *with_guid, void *interface);
 efi_graphics_output_protocol *gopemu_init(void);
 void gopemu_deinit(efi_graphics_output_protocol *self);
 
+// Early exit mechasnism
+static jmp_buf uemu_exit;
+
+static void sigint_handler(int sig)
+{
+    longjmp(uemu_exit, 1);
+}
+
 int main(int argc, char *argv[])
 {
     int err = 1;
@@ -281,11 +291,19 @@ int main(int argc, char *argv[])
         abort(); // TODO: implement base relocations
     }
 
+    // Catch SIGINT
+    signal(SIGINT, sigint_handler);
+
     // Initialize graphics output emulator
     efi_graphics_output_protocol *gop = gopemu_init();
     uemu_expose_protocol(&(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID, gop);
 
-    puts("\nOutput below from image:\n========================\n");
+    if (setjmp(uemu_exit)) {
+        puts("Exiting early...");
+        goto setjmp_exit;
+    }
+
+    puts("\nOutput below from image:\n========================");
     // Call image entry point
     efi_image_entry entry_point =
         image_addr + nthdrs64.OptionalHeader.AddressOfEntryPoint;
@@ -296,9 +314,10 @@ int main(int argc, char *argv[])
         exit_code *= -1;
     }
 
-    printf("\n========================\n");
+    printf("========================\n");
     printf("Image exited with code: %ld\n", exit_code);
 
+setjmp_exit:
     // Shutdown GOP emulator
     gopemu_deinit(gop);
 

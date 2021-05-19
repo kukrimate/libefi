@@ -3,7 +3,9 @@
  */
 
 #include <stdlib.h>
+#include <signal.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <SDL2/SDL.h>
 #include <efi.h>
 
@@ -68,6 +70,7 @@ static void *gopemu_update(void *userdata)
         while (SDL_PollEvent(&event))
             switch (event.type) {
             case SDL_QUIT:
+                kill(getpid(), SIGINT);
                 goto end;
             }
 
@@ -114,6 +117,7 @@ void gopemu_deinit(efi_graphics_output_protocol *gop)
     gopemu *self = (gopemu *) gop;
 
     // Wait for event loop to exit
+    self->keep_running = 0;
     pthread_join(self->loop_thread, NULL);
 
     // Destroy window

@@ -8,6 +8,47 @@
 #include <efi.h>
 
 //
+// We don't need libefi in a Linux userspace app, but these funtions are useful
+//
+
+static efi_ssize efi_strcmp(efi_ch16 *str1, efi_ch16 *str2)
+{
+    while (*str1 == *str2++) {
+        if (*str1++ == 0) {
+            return 0;
+        }
+    }
+    return *str1 - str2[-1];
+}
+
+static efi_size efi_strlen(efi_ch16 *str)
+{
+    efi_ch16 *p = str;
+    for (; *p; ++p);
+    return p - str;
+}
+
+static efi_size efi_strsize(efi_ch16 *str)
+{
+    return (efi_strlen(str) + 1) * sizeof(efi_ch16);
+}
+
+//
+// Debug printing UEFI strings
+//
+
+static char *to_ascii(efi_ch16 *str)
+{
+    static char buf[4096];
+    char *p = buf;
+
+    while (*str)
+        *p++ = *str++;
+    *p = 0;
+    return buf;
+}
+
+//
 // Services that were not implemented yet
 //
 
@@ -200,6 +241,106 @@ efi_boot_services uemu_bs = {
     .set_watchdog_timer       = unsupported_stub,
 };
 
+//
+// Variable services
+//
+
+typedef struct uemu_variable uemu_variable;
+struct uemu_variable {
+    efi_u32  attrib;
+    efi_ch16 *name;
+    efi_guid vendor_guid;
+    uemu_variable *next;
+};
+
+static uemu_variable test_var3 = {
+    .name = L"VariableNo3",
+    .vendor_guid = { 0xcafebabe, 0xcafe, 0xdead, 0xff, 0xee,
+                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
+    .next = NULL,
+};
+
+static uemu_variable test_var2 = {
+    .name = L"TestVariable2",
+    .vendor_guid = { 0xdeadbeef, 0xcafe, 0xdead, 0xff, 0xee,
+                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
+    .next = &test_var3,
+};
+
+static uemu_variable test_var1 = {
+    .name = L"TestVariable1",
+    .vendor_guid = { 0xdeadbeef, 0xcafe, 0xdead, 0xff, 0xee,
+                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
+    .next = &test_var2,
+};
+
+static uemu_variable *variables = &test_var1;
+
+static efi_status efiapi uemu_get_next_variable_name(
+        efi_size *variable_name_size,
+        efi_ch16 *variable_name,
+        efi_guid *vendor_guid)
+{
+    if (!variable_name_size || !variable_name || !vendor_guid)
+        return EFI_INVALID_PARAMETER;
+    if (*variable_name_size < sizeof(efi_ch16))
+        return EFI_INVALID_PARAMETER;
+    // Verify that the string actually has a NUL terminator somewhere
+    for (efi_size idx = 0; idx < *variable_name_size; ++idx)
+        if (variable_name[idx] == 0)
+            goto has_nul;
+    return EFI_INVALID_PARAMETER;
+has_nul:;
+
+    uemu_variable *var = variables;
+    // Unless we got an empty string, we must continue a previous search
+    if (*variable_name != 0) {
+        while (var) {
+            if (memcmp(&var->vendor_guid, vendor_guid, sizeof *vendor_guid) == 0
+                    && efi_strcmp(var->name, variable_name) == 0)
+                goto found;
+            var = var->next;
+        }
+        // The input values must name an existing variable
+        return EFI_INVALID_PARAMETER;
+found:
+        // Continue searching at the next variable
+        var = var->next;
+    }
+
+    // No more variables left
+    if (!var)
+        return EFI_NOT_FOUND;
+
+    // Make sure the variable name fits into the buffer
+    efi_size oldsize = *variable_name_size;
+    *variable_name_size = efi_strsize(var->name);
+    if (oldsize < *variable_name_size)
+        return EFI_BUFFER_TOO_SMALL;
+
+    // Copy variable name and GUID
+    memcpy(variable_name, var->name, *variable_name_size);
+    memcpy(vendor_guid, &var->vendor_guid, sizeof *vendor_guid);
+    return EFI_SUCCESS;
+}
+
+efi_runtime_services uemu_rt = {
+    .get_time = unsupported_stub,
+    .set_time = unsupported_stub,
+    .get_wakeup_time = unsupported_stub,
+    .set_wakeup_time = unsupported_stub,
+
+    .set_virtual_address_map = unsupported_stub,
+    .convert_pointer = unsupported_stub,
+
+    .get_variable = unsupported_stub,
+    .get_next_variable_name = uemu_get_next_variable_name,
+    .set_variable = unsupported_stub,
+
+    .get_next_high_monotonic_count = unsupported_stub,
+    .reset_system = unsupported_stub,
+};
+
 static efi_status efiapi uemu_clear_screen(efi_simple_text_out_protocol *self)
 {
     return EFI_SUCCESS;
@@ -210,7 +351,6 @@ static efi_status efiapi uemu_output_string(efi_simple_text_out_protocol *self,
 {
     for (; *str; ++str)
         putchar(*str);
-
     return EFI_SUCCESS;
 }
 
@@ -220,6 +360,8 @@ efi_simple_text_out_protocol uemu_con_out = {
 };
 
 efi_system_table uemu_st = {
+    .vendor = L"libefi user-mode emulator",
     .con_out = &uemu_con_out,
     .boot_services = &uemu_bs,
+    .runtime_services = &uemu_rt,
 };

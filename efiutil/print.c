@@ -96,8 +96,10 @@ wide_redo:
 				break;
 			case L'g':
 				guid_ptr = va_arg(va, efi_guid *);
-				efi_print(L"{ %x, %x, %x, { %x-%x-%x-%x-%x-%x-%x-%x } }",
-					guid_ptr->data1, guid_ptr->data2, guid_ptr->data3,
+				efi_print(L"%x-%x-%x-%x%x-%x%x%x%x%x%x",
+					guid_ptr->data1,
+					guid_ptr->data2,
+					guid_ptr->data3,
 					guid_ptr->data4[0],
 					guid_ptr->data4[1],
 					guid_ptr->data4[2],
