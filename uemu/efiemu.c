@@ -37,7 +37,7 @@ static efi_size efi_strsize(efi_ch16 *str)
 // Debug printing UEFI strings
 //
 
-static char *to_ascii(efi_ch16 *str)
+static char *efi_to_ascii(efi_ch16 *str)
 {
     static char buf[4096];
     char *p = buf;
@@ -45,6 +45,20 @@ static char *to_ascii(efi_ch16 *str)
     while (*str)
         *p++ = *str++;
     *p = 0;
+    return buf;
+}
+
+static char *guid_to_ascii(efi_guid *guid)
+{
+    static char buf[4096];
+
+    snprintf(buf, sizeof buf,
+                    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                    guid->data1, guid->data2, guid->data3,
+                    guid->data4[0], guid->data4[1],
+                    guid->data4[2], guid->data4[3],
+                    guid->data4[4], guid->data4[5],
+                    guid->data4[6], guid->data4[7]);
     return buf;
 }
 
@@ -167,6 +181,8 @@ static efi_status efiapi uemu_locate_handle(efi_locate_search_type search_type,
                                             efi_size *buffer_size,
                                             efi_handle *buffer)
 {
+    printf("bs->locate_handle(%d, %s)\n", search_type, guid_to_ascii(protocol));
+
     if (search_type == by_register_notify)
         return EFI_UNSUPPORTED;
 
