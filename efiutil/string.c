@@ -3,8 +3,7 @@
  */
 #include <stddef.h>
 
-void *
-memset(void *s, int c, size_t n)
+void *memset(void *s, int c, size_t n)
 {
 	char *p;
 
@@ -14,8 +13,7 @@ memset(void *s, int c, size_t n)
 	return s;
 }
 
-void *
-memmove(void *dest, void *src, size_t n)
+void *memmove(void *dest, void *src, size_t n)
 {
 	char *d, *s;
 
@@ -35,8 +33,7 @@ memmove(void *dest, void *src, size_t n)
 	return dest;
 }
 
-void *
-memcpy(void *dest, void *src, size_t n)
+void *memcpy(void *dest, void *src, size_t n)
 {
 	char *d, *s;
 
@@ -49,8 +46,7 @@ memcpy(void *dest, void *src, size_t n)
 	return dest;
 }
 
-int
-memcmp(const void *s1, const void *s2, size_t n)
+int memcmp(const void *s1, const void *s2, size_t n)
 {
 	const char *p1, *p2;
 
@@ -65,8 +61,8 @@ memcmp(const void *s1, const void *s2, size_t n)
 
 	return 0;
 }
-size_t
-strlen(const char *s)
+
+size_t strlen(const char *s)
 {
 	const char *p;
 

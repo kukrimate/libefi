@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <khelper.h>
+#include <string.h>
 #include "font.h"
 #include "fbterm.h"
 

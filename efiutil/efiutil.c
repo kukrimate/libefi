@@ -3,15 +3,13 @@
  */
 #include <efi.h>
 #include <efiutil.h>
-#include <khelper.h>
 
 efi_handle self_image_handle;
 efi_system_table *st;
 efi_boot_services *bs;
 efi_runtime_services *rt;
 
-void
-efi_init(efi_handle image_handle, efi_system_table *system_table)
+void efi_init(efi_handle image_handle, efi_system_table *system_table)
 {
 	self_image_handle = image_handle;
 	st = system_table;
@@ -19,8 +17,7 @@ efi_init(efi_handle image_handle, efi_system_table *system_table)
 	rt = system_table->runtime_services;
 }
 
-void
-efi_abort(efi_ch16 *error_msg, efi_status status)
+void efi_abort(efi_ch16 *error_msg, efi_status status)
 {
 	efi_print(error_msg);
 	bs->exit(self_image_handle, status, 0, NULL);
@@ -30,8 +27,13 @@ efi_abort(efi_ch16 *error_msg, efi_status status)
 		;
 }
 
-void *
-efi_alloc(efi_size size)
+void efi_assert(efi_bool condition, efi_ch16 *error_msg)
+{
+	if (!condition)
+		efi_abort(error_msg, EFI_ABORTED);
+}
+
+void *efi_alloc(efi_size size)
 {
 	efi_status status;
 	void *buffer;
@@ -42,14 +44,12 @@ efi_alloc(efi_size size)
 	return buffer;
 }
 
-void
-efi_free(void *buffer)
+void efi_free(void *buffer)
 {
 	bs->free_pool(buffer);
 }
 
-void *
-efi_realloc(void *oldptr, efi_size oldsize, efi_size newsize)
+void *efi_realloc(void *oldptr, efi_size oldsize, efi_size newsize)
 {
 	void *newptr;
 
@@ -81,16 +81,14 @@ efi_ssize efi_strcmp(efi_ch16 *str1, efi_ch16 *str2)
     return *str1 - str2[-1];
 }
 
-efi_size
-efi_strlen(efi_ch16 *str)
+efi_size efi_strlen(efi_ch16 *str)
 {
 	efi_ch16 *p = str;
 	for (; *p; ++p);
 	return p - str;
 }
 
-efi_size
-efi_strsize(efi_ch16 *str)
+efi_size efi_strsize(efi_ch16 *str)
 {
 	return (efi_strlen(str) + 1) * sizeof(efi_ch16);
 }
@@ -131,8 +129,8 @@ static void fill_file_path_dp_node(filepath_device_path *node, efi_ch16 *str, ef
 	memcpy(node->path_name, str, len);
 }
 
-efi_device_path_protocol *
-merge_device_paths(efi_device_path_protocol *first, efi_device_path_protocol *second)
+efi_device_path_protocol *merge_device_paths(efi_device_path_protocol *first,
+	efi_device_path_protocol *second)
 {
 	efi_size first_len;
 	efi_size second_len;
@@ -154,8 +152,8 @@ merge_device_paths(efi_device_path_protocol *first, efi_device_path_protocol *se
 	return result;
 }
 
-efi_device_path_protocol *
-append_filepath_device_path(efi_device_path_protocol *base, efi_ch16 *file_path)
+efi_device_path_protocol *append_filepath_device_path(
+	efi_device_path_protocol *base, efi_ch16 *file_path)
 {
 	efi_device_path_protocol *result;
 	efi_size base_len, file_path_len;
@@ -172,8 +170,8 @@ append_filepath_device_path(efi_device_path_protocol *base, efi_ch16 *file_path)
 	return result;
 }
 
-efi_status
-locate_all_handles(efi_guid *protocol, efi_size *num_handles, efi_handle **out_buffer)
+efi_status locate_all_handles(efi_guid *protocol, efi_size *num_handles,
+	efi_handle **out_buffer)
 {
 	efi_status status;
 	efi_size buffer_size;
@@ -194,8 +192,7 @@ retry:
 	return status;
 }
 
-efi_status
-locate_protocol(efi_guid *protocol, void **iface)
+efi_status locate_protocol(efi_guid *protocol, void **iface)
 {
 	efi_status status;
 	efi_size handle_cnt;
@@ -219,8 +216,7 @@ done:
 	return status;
 }
 
-efi_status
-get_file_info(efi_file_protocol *file, efi_file_info **file_info)
+efi_status get_file_info(efi_file_protocol *file, efi_file_info **file_info)
 {
 	efi_status status;
 	efi_size bufsize;

@@ -4,7 +4,6 @@
 
 #include <efi.h>
 #include <efiutil.h>
-#include <khelper.h>
 #include "bootparam.h"
 
 #define PAGE_SIZE 4096
