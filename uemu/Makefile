@@ -10,10 +10,15 @@ LDFLAGS := -pthread
 
 LDLIBS := $(shell pkg-config --libs sdl2)
 
+#
+# Object files
+#
+OBJ := src/uemu.o src/peloader.o src/efiemu.o src/gopemu.o src/util.o
+
 .PHONY: all
 all: uemu
 
-uemu: uemu.o efiemu.o gopemu.o
+uemu: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
@@ -21,4 +26,4 @@ uemu: uemu.o efiemu.o gopemu.o
 
 .PHONY: clean
 clean:
-	rm -f *.o uemu
+	rm -f $(OBJ) uemu

@@ -1,26 +1,14 @@
-/*
- * User mode UEFI emulator
- * Author: Mate Kukri
- */
+//
+// PE32+ image loader
+//
 
-#ifndef __amd64__
-#error The user mode emulator only supports AMD64
-#endif
-
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <setjmp.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
-
-#include <efi.h>
+#include "peloader.h"
 #include "pe32.h"
-
-// EFI image entry point
-typedef efi_status (efiapi *efi_image_entry)(efi_handle, efi_system_table *);
 
 // Error codes
 enum {
@@ -146,7 +134,7 @@ static void *mmap_aligned(void *preferred, u32 align, u32 size)
 // Load PE32 sections based
 static int load_pe_sections(int fd, void *image)
 {
-    printf("Loading PE sections...\n");
+    // printf("Loading PE sections...\n");
 
     // NT header is at the specified offset in the DOS header
     IMAGE_NT_HEADERS64 *nthdrs64 =
@@ -167,11 +155,11 @@ static int load_pe_sections(int fd, void *image)
     u16 section_cnt = nthdrs64->FileHeader.NumberOfSections;
     for (; section_cnt; --section_cnt, ++section) {
 
-        printf("%.8s\n", section->Name);
-        printf("\tCharacteristics: %08x\n", section->Characteristics);
-        printf("\tSizeOfRawData:   %08x\n", section->SizeOfRawData);
-        printf("\tVirtualSize:     %08x\n", section->Misc.VirtualSize);
-        printf("\tVirtualAddress:  %08x\n", section->VirtualAddress);
+        // printf("%.8s\n", section->Name);
+        // printf("\tCharacteristics: %08x\n", section->Characteristics);
+        // printf("\tSizeOfRawData:   %08x\n", section->SizeOfRawData);
+        // printf("\tVirtualSize:     %08x\n", section->Misc.VirtualSize);
+        // printf("\tVirtualAddress:  %08x\n", section->VirtualAddress);
 
         void *section_start = image + section->VirtualAddress;
         void *section_end = section_start
@@ -229,11 +217,11 @@ static int apply_pe_relocs(u64 orig_base, void *image)
             return ERR_INVALID;
 
         // Apply block
-        printf("Applying reloc block for RVA: %08x\n", block->VirtualAddress);
+        // printf("Applying reloc block for RVA: %08x\n", block->VirtualAddress);
         u32 reloc_cnt = (block_size - sizeof *block) / sizeof(u16);
         for (u32 i = 0; i < reloc_cnt; ++i) {
-            printf("Type: %02d  Offset: %08x\n",
-                block->Fixups[i].Type, block->Fixups[i].Offset);
+            // printf("Type: %02d  Offset: %08x\n",
+            //     block->Fixups[i].Type, block->Fixups[i].Offset);
             switch (block->Fixups[i].Type) {
             case IMAGE_REL_BASED_ABSOLUTE: // Do nothing
                 break;
@@ -254,50 +242,24 @@ static int apply_pe_relocs(u64 orig_base, void *image)
     return 0;
 }
 
-// EFI API emulator
-extern efi_system_table uemu_st;
-void uemu_expose_protocol(efi_guid *with_guid, void *interface);
-
-// Graphics output emulator
-efi_graphics_output_protocol *gopemu_init(void);
-void gopemu_deinit(efi_graphics_output_protocol *self);
-
-// Early exit mechasnism
-static jmp_buf uemu_exit;
-
-static void sigint_handler(int sig)
+//
+// Load a PE32+ image into memory
+//
+void *load_pe_image(int fd)
 {
-    longjmp(uemu_exit, 1);
-}
-
-int main(int argc, char *argv[])
-{
-    int err = 1;
-
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s PEFILE\n", argv[0]);
-        goto out;
-    }
-
-    int fd = open(argv[1], O_RDONLY);
-    if (fd < 0) {
-        perror(argv[1]);
-        goto out;
-    }
-
     // Load and validate image headers
     u32 nthdrs_offs;
     if (find_filehdr(fd, &nthdrs_offs) < 0) {
         fputs("Invalid DOS header!\n", stderr);
-        goto out_close;
+        goto err;
     }
     IMAGE_NT_HEADERS64 nthdrs64;
     if (load_nthdrs64(fd, nthdrs_offs, &nthdrs64) < 0) {
         fputs("Invalid PE32+ header!\n", stderr);
-        goto out_close;
+        goto err;
     }
     if (!validate_nthdrs(nthdrs_offs, &nthdrs64)) {
-        goto out_close;
+        goto err;
     }
 
     // Map memory for image
@@ -308,11 +270,11 @@ int main(int argc, char *argv[])
 
     if (image_addr == MAP_FAILED) {
         perror("Failed to map memory for image");
-        goto out_close;
+        goto err;
     }
 
-    printf("Original image base: %p\n", (void *) orig_base);
-    printf("Real image base:     %p\n", image_addr);
+    // printf("Original image base: %p\n", (void *) orig_base);
+    // printf("Real image base:     %p\n", image_addr);
 
     // Load headers
     ssize_t len = pread(fd,
@@ -321,55 +283,33 @@ int main(int argc, char *argv[])
                         0);
     if (len < 0) {
         perror("Failed to read headers");
-        goto out_close;
+        goto err;
     }
     // Load sections
     if (load_pe_sections(fd, image_addr) < 0) {
         fputs("Failed to load section!\n", stderr);
-        goto out_close;
+        goto err;
     }
     // Perform base relocations if necessary
     if (orig_base != (u64) image_addr) {
-        puts("Performing base relocations...");
+        // printf("Performing base relocations...\n");
         if (apply_pe_relocs(orig_base, image_addr) < 0) {
             fputs("Failed to apply base relocations!\n", stderr);
-            goto out_close;
+            goto err;
         }
     }
 
-    // Catch SIGINT
-    signal(SIGINT, sigint_handler);
+    return image_addr;
+err:
+    return NULL;
+}
 
-    // Initialize graphics output emulator
-    efi_graphics_output_protocol *gop = gopemu_init();
-    uemu_expose_protocol(&(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID, gop);
-
-    if (setjmp(uemu_exit)) {
-        puts("Exiting early...");
-        goto setjmp_exit;
-    }
-
-    puts("\nOutput below from image:\n========================");
-    // Call image entry point
-    efi_image_entry entry_point =
-        image_addr + nthdrs64.OptionalHeader.AddressOfEntryPoint;
-
-    efi_ssize exit_code = entry_point(NULL, &uemu_st);
-    if (EFI_ERROR(exit_code)) {
-        exit_code &= ~SIZE_MAX_BIT;
-        exit_code *= -1;
-    }
-
-    printf("========================\n");
-    printf("Image exited with code: %ld\n", exit_code);
-
-setjmp_exit:
-    // Shutdown GOP emulator
-    gopemu_deinit(gop);
-
-    err = 0;
-out_close:
-    close(fd);
-out:
-    return err;
+//
+// Get the entry point of a PE32+ image in memory
+//
+void *get_pe_entry(void *image)
+{
+    IMAGE_NT_HEADERS64 *nthdrs64 =
+        image + ((IMAGE_DOS_HEADER *) image)->e_lfanew;
+    return image + nthdrs64->OptionalHeader.AddressOfEntryPoint;
 }

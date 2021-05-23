@@ -1,6 +1,6 @@
-/*
- * Emulator for the UEFI GOP (Graphics Output Protocol) using SDL2
- */
+//
+// Emulator for the UEFI GOP (Graphics Output Protocol) using SDL2
+//
 
 #include <stdlib.h>
 #include <signal.h>

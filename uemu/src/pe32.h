@@ -1,6 +1,6 @@
-/*
- * PE32/PE32+ structures
- */
+//
+// PE32/PE32+ structures
+//
 
 #ifndef PE32_H
 #define PE32_H
