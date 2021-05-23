@@ -46,8 +46,6 @@ static efi_status efiapi uemu_wait_for_event(efi_size num_events,
                                              efi_event *event,
                                              efi_size *index)
 {
-    for (;;)
-        ;
     return EFI_INVALID_PARAMETER;
 }
 

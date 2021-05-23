@@ -18,6 +18,9 @@
 #include "protocol/console.h"
 #include "peloader.h"
 
+// Wait for key before exiting
+static _Bool flag_wait = 0;
+
 // Early exit mechasnism
 static jmp_buf uemu_exit;
 
@@ -62,21 +65,40 @@ static void start_emulator(void *image)
     }
     printf("Image exited with code: %ld\n", exit_code);
 
+    // Wait for key if requested
+    if (flag_wait) {
+        printf("Press return to exit!\n");
+        getchar();
+    }
+
 setjmp_exit:
     console_exit(console_handle);
 }
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s PEFILE\n", argv[0]);
+    int opt;
+
+    while ((opt = getopt(argc, argv, "hw")) != -1)
+        switch (opt) {
+        case 'w':
+            flag_wait = 1;
+            break;
+        case 'h':
+        default:
+            goto print_usage;
+        }
+
+    if (optind >= argc) {
+    print_usage:
+        fprintf(stderr, "Usage: %s [-h] [-w] PEFILE\n", argv[0]);
         return 1;
     }
 
     // Open file
-    int fd = open(argv[1], O_RDONLY);
+    int fd = open(argv[optind], O_RDONLY);
     if (fd < 0) {
-        perror(argv[1]);
+        perror(argv[optind]);
         return 1;
     }
 
