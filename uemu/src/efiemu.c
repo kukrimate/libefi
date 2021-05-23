@@ -1,5 +1,5 @@
 //
-// Interposer layer for (U)EFI services
+// Interposer layer for EFI services
 //
 
 #include <stdio.h>

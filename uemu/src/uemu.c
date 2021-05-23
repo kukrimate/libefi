@@ -14,18 +14,9 @@
 #include <setjmp.h>
 #include <unistd.h>
 #include <efi.h>
+#include "efiemu.h"
+#include "protocol/console.h"
 #include "peloader.h"
-
-// EFI image entry point
-typedef efi_status (efiapi *efi_image_entry)(efi_handle, efi_system_table *);
-
-// EFI API emulator
-extern efi_system_table uemu_st;
-void uemu_expose_protocol(efi_guid *with_guid, void *interface);
-
-// Graphics output emulator
-efi_graphics_output_protocol *gopemu_init(void);
-void gopemu_deinit(efi_graphics_output_protocol *self);
 
 // Early exit mechasnism
 static jmp_buf uemu_exit;
@@ -35,14 +26,24 @@ static void sigint_handler(int sig)
     longjmp(uemu_exit, 1);
 }
 
+static void console_exit_callback(ConsoleHandle *console_handle)
+{
+    kill(getpid(), SIGINT);
+}
+
 static void start_emulator(void *image)
 {
     // Catch SIGINT
     signal(SIGINT, sigint_handler);
 
     // Initialize graphics output emulator
-    efi_graphics_output_protocol *gop = gopemu_init();
-    uemu_expose_protocol(&(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID, gop);
+    ConsoleHandle *console_handle = console_init(console_exit_callback);
+
+    // Install console protocols into emulator
+    uemu_expose_protocol(
+        &(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
+        console_gop(console_handle));
+    uemu_st.con_in = console_text_in(console_handle);
 
     // Setup early exit point
     if (setjmp(uemu_exit)) {
@@ -52,18 +53,16 @@ static void start_emulator(void *image)
 
     // Call image entry point
     efi_image_entry entry_point = get_pe_entry(image);
-
     efi_ssize exit_code = entry_point(NULL, &uemu_st);
     if (EFI_ERROR(exit_code)) {
+        // Pretend EFI error codes are just negative numbers
         exit_code &= ~SIZE_MAX_BIT;
         exit_code *= -1;
     }
-
-    printf("=========\nImage exited with code: %ld\n", exit_code);
+    printf("Image exited with code: %ld\n", exit_code);
 
 setjmp_exit:
-    // Shutdown GOP emulator
-    gopemu_deinit(gop);
+    console_exit(console_handle);
 }
 
 int main(int argc, char *argv[])

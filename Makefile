@@ -3,7 +3,7 @@ ARCH    ?= x86_64
 LIBEFI  := $(shell pwd)
 
 # Architecture independent examples
-MODULES := efiutil progs/hello progs/bitfont progs/dumpvar
+MODULES := efiutil progs/hello progs/bitfont progs/dumpvar progs/echo
 
 # x86_64 only loader example
 ifeq ($(ARCH), x86_64)

@@ -6,6 +6,11 @@
 #define UTIL_H
 
 //
+// Calculate the size of an array
+//
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
+
+//
 // Compare two EFI strings
 //
 efi_ssize efi_strcmp(efi_ch16 *str1, efi_ch16 *str2);
