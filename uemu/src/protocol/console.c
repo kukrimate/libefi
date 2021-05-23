@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "console.h"
+#include "font.h"
 #include "util.h"
 
 //
@@ -59,6 +60,68 @@ static efi_graphics_output_protocol_mode gopemu_mode = {
     .frame_buffer_size = sizeof gopemu_fbdata,
 };
 
+//
+// Text mode resultion
+//
+#define TEXT_COLS 80
+#define TEXT_ROWS 25
+
+//
+// Entry on the screne in text mode
+//
+typedef struct {
+    efi_u8 attr;
+    efi_ch16 c;
+} TextCell;
+
+//
+// EFI text mode colors
+//
+typedef struct {
+    efi_u8 r, g, b;
+} Color;
+
+//
+// Palette used for text-mode (same as IBM EGA)
+//
+static Color textmode_palette[] = {
+    { 0x00, 0x00, 0x00 }, // EFI_BLACK
+    { 0x00, 0x00, 0xaa }, // EFI_BLUE
+    { 0x00, 0xaa, 0x00 }, // EFI_GREEN
+    { 0x00, 0xaa, 0xaa }, // EFI_CYAN
+    { 0xaa, 0x00, 0x00 }, // EFI_RED
+    { 0xaa, 0x00, 0xaa }, // EFI_MAGENTA
+    { 0xaa, 0x55, 0x00 }, // EFI_BROWN
+    { 0xaa, 0xaa, 0xaa }, // EFI_LIGHTGRAY
+    { 0x55, 0x55, 0x55 }, // EFI_DARKGRAY
+    { 0x55, 0x55, 0xff }, // EFI_LIGHTBLUE
+    { 0x55, 0xff, 0x55 }, // EFI_LIGHTGREEN
+    { 0x55, 0xff, 0xff }, // EFI_LIGHTCYAN
+    { 0xff, 0x55, 0x55 }, // EFI_LIGHTRED
+    { 0xff, 0x55, 0xff }, // EFI_LIGHTMAGENTA
+    { 0xff, 0xff, 0x55 }, // EFI_YELLOW
+    { 0xff, 0xff, 0xff }, // EFI_WHITE
+};
+
+#define PIXELWIDTH sizeof(efi_u32)
+#define LINEWIDTH  PIXELWIDTH * GOPEMU_WIDTH
+
+static void plotpixel(efi_u32 x, efi_u32 y, Color color)
+{
+    unsigned char *pixel =
+        (void *) gopemu_fbdata + x * PIXELWIDTH + y * LINEWIDTH;
+    pixel[0] = color.r;
+    pixel[1] = color.g;
+    pixel[2] = color.b;
+}
+
+static void clearscreen(Color color)
+{
+    for (efi_u32 x = 0; x < GOPEMU_WIDTH; ++x)
+        for (efi_u32 y = 0; y < GOPEMU_HEIGHT; ++y)
+            plotpixel(x, y, color);
+}
+
 struct ConsoleHandle {
     // Exit callback
     ConsoleExitCallback exit_callback;
@@ -80,6 +143,11 @@ struct ConsoleHandle {
     pthread_mutex_t input_queue_lock; // Only one thread can touch the queue
     size_t input_queue_count;         // Number of queued keys
     efi_in_key input_queue[16];       // Array of queued keys
+
+    // Current cursor positition
+    efi_u8 cursor_row, cursor_col;
+    // Current attributes
+    efi_u8 output_attr;
 
     // Supported EFI protocols
     efi_graphics_output_protocol gop;
@@ -117,6 +185,126 @@ static efi_status efiapi text_in_read_key(efi_simple_text_in_protocol *this,
     pthread_mutex_unlock(&self->input_queue_lock);
 
     return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_reset(efi_simple_text_out_protocol *this,
+    efi_bool ext_verf)
+{
+    ConsoleHandle *self = (void *) this - offsetof(ConsoleHandle, text_out);
+    self->cursor_row = 0;
+    self->cursor_col = 0;
+    self->output_attr = EFI_BACKGROUND_BLACK | EFI_LIGHTGRAY;
+    this->clear_screen(this);
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_output_string(
+    efi_simple_text_out_protocol *this, efi_ch16 *str)
+{
+    // Font to render text-mode as
+    static ConsoleFont *curfont = &font_8x16;
+
+    ConsoleHandle *self = (void *) this - offsetof(ConsoleHandle, text_out);
+    Color fg = textmode_palette[self->output_attr & 0xf];
+    Color bg = textmode_palette[(self->output_attr >> 4) & 0xf];
+
+    unsigned char *glyph;
+    uint8_t line, bit;
+
+    if (self->cursor_row >= TEXT_ROWS) {
+        memmove(
+            (void *) gopemu_fbdata,
+            (void *) gopemu_fbdata + LINEWIDTH * curfont->lines,
+            LINEWIDTH * (GOPEMU_HEIGHT - curfont->lines));
+        --self->cursor_row;
+    }
+
+    for (; *str; ++str)
+        switch (*str) {
+        case L'\r':
+            self->cursor_col = 0;
+            break;
+        case L'\n':
+            ++self->cursor_row;
+            break;
+        default:
+            glyph = curfont->glyphs + curfont->lines * *str;
+            for (line = 0; line < curfont->lines; ++line)
+                for (bit = 0; bit < curfont->bits; ++bit)
+                    if (glyph[line] & (0x80 >> bit))
+                        plotpixel(
+                            self->cursor_col * curfont->bits + bit,
+                            self->cursor_row * curfont->lines + line,
+                            fg);
+                    else
+                        plotpixel(
+                            self->cursor_col * curfont->bits + bit,
+                            self->cursor_row * curfont->lines + line,
+                            bg);
+            if (++self->cursor_col >= TEXT_COLS) {
+                self->cursor_col = 0;
+                ++self->cursor_row;
+            }
+            break;
+        }
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_test_string(
+    efi_simple_text_out_protocol *this, efi_ch16 *str)
+{
+    // FIXME: do some kind of actual test that we can really render the string
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_query_mode(efi_simple_text_out_protocol *this,
+    efi_size mode_num, efi_size *cols, efi_size *rows)
+{
+    if (mode_num != 0)
+        return EFI_UNSUPPORTED;
+    *cols = TEXT_COLS;
+    *rows = TEXT_ROWS;
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_set_mode(efi_simple_text_out_protocol *this,
+    efi_size mode_num)
+{
+    if (mode_num != 0)
+        return EFI_UNSUPPORTED;
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_set_attr(efi_simple_text_out_protocol *this,
+    efi_size attr)
+{
+    ConsoleHandle *self = (void *) this - offsetof(ConsoleHandle, text_out);
+    self->output_attr = attr;
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_clear_screen(efi_simple_text_out_protocol *this)
+{
+    ConsoleHandle *self = (void *) this - offsetof(ConsoleHandle, text_out);
+    clearscreen(textmode_palette[(self->output_attr >> 4) & 0xf]);
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_set_cursor_pos(
+    efi_simple_text_out_protocol *this, efi_size col, efi_size row)
+{
+    if (col >= TEXT_COLS || row >= TEXT_ROWS)
+        return EFI_INVALID_PARAMETER;
+    ConsoleHandle *self = (void *) this - offsetof(ConsoleHandle, text_out);
+    self->cursor_col = col;
+    self->cursor_row = row;
+    return EFI_SUCCESS;
+}
+
+static efi_status efiapi text_out_enable_cursor(
+    efi_simple_text_out_protocol *this, efi_bool visible)
+{
+    return EFI_UNSUPPORTED;
 }
 
 //
@@ -222,11 +410,10 @@ static void *console_update(void *userdata)
                 goto end;
             }
 
-        // Render framebuffer contents
+        SDL_RenderClear(self->renderer);
         SDL_UpdateTexture(self->texture,
             NULL, (void *) self->gop.mode->frame_buffer_base,
             sizeof(efi_u32) * self->gop.mode->info->pixels_per_scan_line);
-        SDL_RenderClear(self->renderer);
         SDL_RenderCopy(self->renderer, self->texture, NULL, NULL);
         SDL_RenderPresent(self->renderer);
     }
@@ -259,9 +446,25 @@ ConsoleHandle *console_init(ConsoleExitCallback exit_callback)
 
     // Setup GOP
     self->gop.mode = &gopemu_mode;
+
     // Setup text input
     self->text_in.reset = text_in_reset;
     self->text_in.read_key = text_in_read_key;
+
+    // Setup text output
+    self->cursor_row = 0;
+    self->cursor_col = 0;
+    self->output_attr = EFI_BACKGROUND_BLACK | EFI_LIGHTGRAY;
+
+    self->text_out.reset = text_out_reset;
+    self->text_out.output_string = text_out_output_string;
+    self->text_out.test_string = text_out_test_string;
+    self->text_out.query_mode = text_out_query_mode;
+    self->text_out.set_mode = text_out_set_mode;
+    self->text_out.set_attr = text_out_set_attr;
+    self->text_out.clear_screen = text_out_clear_screen;
+    self->text_out.set_cursor_pos = text_out_set_cursor_pos;
+    self->text_out.enable_cursor = text_out_enable_cursor;
 
     // Create event loop thread
     self->keep_running = 1;
@@ -279,7 +482,6 @@ efi_simple_text_in_protocol *console_text_in(ConsoleHandle *self)
 {
     return &self->text_in;
 }
-
 
 efi_simple_text_out_protocol *console_text_out(ConsoleHandle *self)
 {

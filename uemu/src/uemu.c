@@ -44,6 +44,7 @@ static void start_emulator(void *image)
         &(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
         console_gop(console_handle));
     uemu_st.con_in = console_text_in(console_handle);
+    uemu_st.con_out = console_text_out(console_handle);
 
     // Setup early exit point
     if (setjmp(uemu_exit)) {

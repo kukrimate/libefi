@@ -7,6 +7,7 @@
 //
 // Unicode control characters
 //
+#define CHAR_NUL              0x0000
 #define CHAR_BACKSPACE        0x0008
 #define CHAR_TAB              0x0009
 #define CHAR_LINEFEED         0x000A
