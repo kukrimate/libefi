@@ -173,6 +173,9 @@ efi_device_path_protocol *append_filepath_device_path(
 efi_status locate_all_handles(efi_guid *protocol, efi_size *num_handles,
 	efi_handle **out_buffer)
 {
+#ifdef USE_EFI110
+	return bs->locate_handle_buffer(by_protocol, protocol, NULL, num_handles, out_buffer);
+#else
 	efi_status status;
 	efi_size buffer_size;
 
@@ -190,10 +193,14 @@ retry:
 	}
 	*num_handles = buffer_size / sizeof(efi_handle);
 	return status;
+#endif
 }
 
 efi_status locate_protocol(efi_guid *protocol, void **iface)
 {
+#ifdef USE_EFI110
+	return bs->locate_protocol(protocol, NULL, iface);
+#else
 	efi_status status;
 	efi_size handle_cnt;
 	efi_handle *handle_buf;
@@ -214,6 +221,7 @@ done:
 		efi_free(handle_buf);
 
 	return status;
+#endif
 }
 
 efi_status get_file_info(efi_file_protocol *file, efi_file_info **file_info)
