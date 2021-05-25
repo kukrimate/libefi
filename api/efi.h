@@ -134,6 +134,14 @@ typedef enum {
     by_protocol
 } efi_locate_search_type;
 
+// Information entry about a protocol
+typedef struct {
+    efi_handle agent_handle;
+    efi_handle controller_handle;
+    efi_u32 attrib;
+    efi_u32 open_count;
+} efi_open_protocol_information_entry;
+
 // Protocol headers depend on the system table
 typedef struct efi_system_table efi_system_table;
 
@@ -243,6 +251,67 @@ typedef struct {
         efi_u64 watchdog_code,
         efi_size data_size,
         efi_ch16 *watchdog_data);
+
+    // Driver support services
+    efi_status (efiapi *connect_controller)(
+        efi_handle controller_handle,
+        efi_handle *driver_image_handle,
+        efi_device_path_protocol *remaining_device_path,
+        efi_bool recursive);
+    efi_status (efiapi *disconnect_controller)(
+        efi_handle controller_handle,
+        efi_handle driver_image_handle,
+        efi_handle child_handle);
+
+    // Open and close protocol services
+    efi_status (efiapi *open_protocol)(
+        efi_handle handle,
+        efi_guid *protocol,
+        void **interface,
+        efi_handle agent_handle,
+        efi_handle controller_handle,
+        efi_u32 attrib);
+    efi_status (efiapi *close_protocol)(
+        efi_handle handle,
+        efi_guid *protocol,
+        efi_handle agent_handle,
+        efi_handle controller_handle);
+    efi_status (efiapi *open_protocol_information)(
+        efi_handle handle,
+        efi_guid *protocol,
+        efi_open_protocol_information_entry **entry_buffer,
+        efi_size *entry_count);
+
+    // Library services
+    efi_status (efiapi *protocols_per_handle)(
+        efi_handle handle,
+        efi_guid ***protocol_buffer,
+        efi_size *protocol_buffer_count);
+    efi_status (efiapi *locate_handle_buffer)(
+        efi_locate_search_type search_type,
+        efi_guid *protocol,
+        void *search_key,
+        efi_size *handle_count,
+        efi_handle **handle_buffer);
+    efi_status (efiapi *locate_protocol)(efi_guid *protocol, void *registration, void **interface);
+    efi_status (efiapi *install_multiple_protocol_interfaces)(efi_handle *handle, ...);
+    efi_status (efiapi *uninstall_multiple_protocol_interfaces)(efi_handle handle, ...);
+
+    // CRC32
+    efi_status (efiapi *calculate_crc32)(void *data, efi_size data_size, efi_u32 *crc32);
+
+    // Misc services
+    void (efiapi *copy_mem)(void *dest, void *src, efi_size length);
+    void (efiapi *set_mem)(void *buffer, efi_size size, efi_u8 value);
+
+    // Extended event creation (UEFI 2.0+ only)
+    efi_status (efiapi *create_event_ex)(
+        efi_u32 type,
+        efi_tpl notify_tpl,
+        efi_event_notify notify_function,
+        void *notify_context,
+        efi_guid *event_group,
+        efi_event *event);
 } efi_boot_services;
 
 // Types of resets
@@ -295,6 +364,17 @@ typedef struct {
         efi_status reset_status,
         efi_size data_size,
         void *reset_data);
+
+    // Capsule services (UEFI 2.0+)
+    void *update_capsule;
+    void *query_capsule_capabilities;
+
+    // Variable infromation service (UEFI 2.0+)
+    efi_status (efiapi *query_variable_info)(
+        efi_u32 attrib,
+        efi_u64 *max_storage_size,
+        efi_u64 *rem_storage_size,
+        efi_u64 *max_size);
 } efi_runtime_services;
 
 // EFI configuration table

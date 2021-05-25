@@ -1,5 +1,5 @@
 //
-// Simple application that echoes keyboard input to the console
+// Prints information about every key pressed by the user
 //
 
 #include <efi.h>

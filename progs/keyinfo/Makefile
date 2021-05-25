@@ -1,7 +1,7 @@
 include $(LIBEFI)/tools/Makefile-$(ARCH).efi
 
 # Application
-APP := echo$(EXT)
+APP := keyinfo$(EXT)
 
 # Subsystem ID (EFI Application)
 SUBSYSTEM := 10
@@ -9,7 +9,7 @@ SUBSYSTEM := 10
 .PHONY: all
 all: $(APP)
 
-$(APP): echo.o
+$(APP): keyinfo.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 .PHONY: clean

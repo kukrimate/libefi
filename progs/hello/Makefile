@@ -11,5 +11,6 @@ all: $(APP)
 $(APP): $(OBJ)
 	$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
 
+.PHONY: clean
 clean:
-	rm -f $(APP) $(OBJ)
+	rm -f *.o *.efi
