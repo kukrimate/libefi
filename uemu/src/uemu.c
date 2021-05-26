@@ -16,6 +16,7 @@
 #include <efi.h>
 #include "efiemu.h"
 #include "protocol/console.h"
+#include "protocol/unicode.h"
 #include "protocol/hii.h"
 #include "peloader.h"
 
@@ -75,6 +76,13 @@ static void start_emulator(void *image)
     uemu_st.con_in = console_text_in(console_handle);
     uemu_st.std_err_handle = handle;
     uemu_st.std_err = uemu_st.con_out = console_text_out(console_handle);
+
+    // Install Unicode Collation protocol
+    handle = NULL;
+    uemu_install_protocol_interface(&handle,
+        &(efi_guid) EFI_UNICODE_COLLATION_PROTOCOL2_GUID,
+        efi_native_interface,
+        unicode_collation());
 
     // Install HII protocols
     handle = NULL;

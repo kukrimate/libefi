@@ -15,6 +15,7 @@
 typedef void *efi_handle;
 
 // EFI chars
+typedef efi_u8 efi_ch8;
 typedef efi_u16 efi_ch16;
 
 // EFI bool
@@ -153,7 +154,13 @@ typedef struct efi_system_table efi_system_table;
 #include <protocol/efi_file_protocol.h>
 #include <protocol/efi_simple_file_system.h>
 #include <protocol/efi_graphics_output.h>
+#include <protocol/efi_unicode_collation.h>
 #include <protocol/efi_hii_database.h>
+
+// Non-protocol GUIDs
+#define EFI_GLOBAL_VARIABLE \
+    { 0x8BE4DF61, 0x93CA, 0x11d2, 0xAA, 0x0D, 0x00, 0xE0, 0x98, 0x03, \
+        0x2B, 0x8C }
 
 // EFI tables
 typedef struct {

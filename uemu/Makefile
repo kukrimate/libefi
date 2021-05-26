@@ -15,7 +15,7 @@ LDLIBS := $(shell pkg-config --libs sdl2)
 #
 OBJ := src/uemu.o src/peloader.o src/efiemu.o src/util.o \
 	src/efisys/handle.o src/efisys/variable.o \
-	src/protocol/console.o src/protocol/hii.o
+	src/protocol/console.o src/protocol/hii.o src/protocol/unicode.o
 
 .PHONY: all
 all: uemu

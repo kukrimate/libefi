@@ -11,6 +11,15 @@
 typedef efi_status (efiapi *efi_image_entry)(efi_handle, efi_system_table *);
 
 //
+// Memory allocation services
+//
+
+efi_status efiapi uemu_allocate_pool(efi_memory_type pool_type, efi_size size,
+    void **buffer);
+
+efi_status efiapi uemu_free_pool(void *buffer);
+
+//
 // Protocol services
 //
 
@@ -33,6 +42,10 @@ efi_status efiapi uemu_reinstall_protocol_interface(efi_handle handle,
 efi_status efiapi uemu_uninstall_protocol_interface(efi_handle handle,
     efi_guid *protocol, void *interface);
 
+efi_status efiapi uemu_locate_handle_buffer(efi_locate_search_type search_type,
+    efi_guid *protocol, void *search_key, efi_size *handle_count,
+    efi_handle **handle_buffer);
+
 efi_status efiapi uemu_open_protocol(efi_handle handle, efi_guid *protocol,
     void **interface, efi_handle agent_handle, efi_handle controller_handle,
     efi_u32 attrib);
@@ -47,6 +60,9 @@ efi_status efiapi uemu_open_protocol_information(efi_handle handle,
 //
 // Variable services
 //
+
+efi_status efiapi uemu_get_variable(efi_ch16 *variable_name,
+    efi_guid *vendor_guid, efi_u32 *attrib, efi_size *data_size, void *data);
 
 efi_status efiapi uemu_get_next_variable_name(efi_size *variable_name_size,
     efi_ch16 *variable_name, efi_guid *vendor_guid);

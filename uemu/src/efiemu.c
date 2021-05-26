@@ -22,8 +22,8 @@ static efi_status efiapi unsupported_stub()
 // Memory allocation
 //
 
-static efi_status efiapi uemu_allocate_pool(efi_memory_type pool_type,
-    efi_size size, void **buffer)
+efi_status efiapi uemu_allocate_pool(efi_memory_type pool_type, efi_size size,
+    void **buffer)
 {
     printf("bs->allocate_pool(%d, %ld, %p)\n", pool_type, size, buffer);
 
@@ -39,7 +39,7 @@ static efi_status efiapi uemu_allocate_pool(efi_memory_type pool_type,
     return EFI_SUCCESS;
 }
 
-static efi_status efiapi uemu_free_pool(void *buffer)
+efi_status efiapi uemu_free_pool(void *buffer)
 {
     printf("bs->free_pool(%p)\n", buffer);
 
@@ -127,7 +127,7 @@ efi_boot_services uemu_bs = {
 
     // Library services
     .protocols_per_handle                   = unsupported_stub,
-    .locate_handle_buffer                   = unsupported_stub,
+    .locate_handle_buffer                   = uemu_locate_handle_buffer,
     .locate_protocol                        = uemu_locate_protocol,
     .install_multiple_protocol_interfaces   = unsupported_stub,
     .uninstall_multiple_protocol_interfaces = unsupported_stub,
@@ -144,22 +144,22 @@ efi_boot_services uemu_bs = {
 };
 
 efi_runtime_services uemu_rt = {
-    .get_time = unsupported_stub,
-    .set_time = unsupported_stub,
+    .get_time        = unsupported_stub,
+    .set_time        = unsupported_stub,
     .get_wakeup_time = unsupported_stub,
     .set_wakeup_time = unsupported_stub,
 
     .set_virtual_address_map = unsupported_stub,
-    .convert_pointer = unsupported_stub,
+    .convert_pointer         = unsupported_stub,
 
-    .get_variable = unsupported_stub,
+    .get_variable           = uemu_get_variable,
     .get_next_variable_name = uemu_get_next_variable_name,
-    .set_variable = unsupported_stub,
+    .set_variable           = unsupported_stub,
 
     .get_next_high_monotonic_count = unsupported_stub,
-    .reset_system = unsupported_stub,
+    .reset_system                  = unsupported_stub,
 
-    .update_capsule = unsupported_stub,
+    .update_capsule             = unsupported_stub,
     .query_capsule_capabilities = unsupported_stub,
 
     .query_variable_info = unsupported_stub,

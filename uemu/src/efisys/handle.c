@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "efiemu.h"
 #include "util.h"
 
 //
@@ -206,6 +207,41 @@ efi_status efiapi uemu_locate_handle(efi_locate_search_type search_type,
     return EFI_SUCCESS;
 }
 
+efi_status efiapi uemu_locate_handle_buffer(efi_locate_search_type search_type,
+    efi_guid *protocol, void *search_key, efi_size *handle_count,
+    efi_handle **handle_buffer)
+{
+    printf("bs->locate_handle_buffer(%d, %s)\n", search_type, guid_to_ascii(protocol));
+
+    if (search_type == by_register_notify)
+        return EFI_UNSUPPORTED;
+
+    // Cound how many handles have the specified protocol
+    *handle_count = 0;
+    for (uemu_handle *cur = uhandle_head; cur; cur = cur->next) {
+        if (search_type == all_handles || find_uprotocol(cur, protocol)) {
+            ++*handle_count;
+        }
+    }
+
+    // Allocate buffer
+    efi_status status = uemu_allocate_pool(efi_loader_data,
+        *handle_count * sizeof(efi_handle), handle_buffer);
+    if (EFI_ERROR(status))
+        return EFI_OUT_OF_RESOURCES;
+
+
+    // Copy all matching handles to the buffer
+    efi_size handle_idx = 0;
+    for (uemu_handle *cur = uhandle_head; cur; cur = cur->next) {
+        if (search_type == all_handles || find_uprotocol(cur, protocol)) {
+            *handle_buffer[handle_idx++] = (efi_handle) cur;
+        }
+    }
+
+    return EFI_SUCCESS;
+}
+
 efi_status efiapi uemu_locate_protocol(efi_guid *protocol, void *registration,
     void **interface)
 {
@@ -231,18 +267,32 @@ efi_status efiapi uemu_locate_protocol(efi_guid *protocol, void *registration,
     return EFI_NOT_FOUND;
 }
 
+//
+// FIXME: the OpenProtocol/CloseProtocol implementation below is horrificly
+// non-compliant with the specfication
+//
+
 efi_status efiapi uemu_open_protocol(efi_handle handle, efi_guid *protocol,
     void **interface, efi_handle agent_handle, efi_handle controller_handle,
     efi_u32 attrib)
 {
-    printf("WARN: bs->open_protocol() not supported!\n");
-    return EFI_UNSUPPORTED;
+    printf("bs->open_protocol(%p, %s)\n", handle, guid_to_ascii(protocol));
+
+    if (handle == NULL || protocol == NULL || interface == NULL)
+        return EFI_INVALID_PARAMETER;
+
+    uemu_protocol *uprotocol = find_uprotocol((uemu_handle *) handle, protocol);
+    if (uprotocol == NULL)
+        return EFI_UNSUPPORTED;
+
+    *interface = uprotocol->interface;
+    return EFI_SUCCESS;
 }
 
 efi_status efiapi uemu_close_protocol(efi_handle handle, efi_guid *protocol,
     efi_handle agent_handle, efi_handle controller_handle)
 {
-    printf("WARN: bs->close_protocol() not supported!\n");
+    printf("bs->close_protocol(%p, %s)\n", handle, guid_to_ascii(protocol));
     return EFI_UNSUPPORTED;
 }
 

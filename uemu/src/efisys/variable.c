@@ -3,6 +3,7 @@
 //
 
 #include <efi.h>
+#include <stdio.h>
 #include <string.h>
 #include "util.h"
 
@@ -11,34 +12,66 @@
 //
 typedef struct uemu_variable uemu_variable;
 struct uemu_variable {
-    efi_u32  attrib;
+    efi_u32 attrib;
     efi_ch16 *name;
     efi_guid vendor_guid;
+    efi_size data_size;
+    void *data;
     uemu_variable *next;
 };
 
-static uemu_variable test_var3 = {
-    .name = L"VariableNo3",
-    .vendor_guid = { 0xcafebabe, 0xcafe, 0xdead, 0xff, 0xee,
-                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
-    .next = NULL,
-};
+// static uemu_variable lang = {
+//     .name = L"PlatformLang",
+//     .vendor_guid = EFI_GLOBAL_VARIABLE,
+//     .next = NULL,
+// };
 
-static uemu_variable test_var2 = {
-    .name = L"TestVariable2",
-    .vendor_guid = { 0xdeadbeef, 0xcafe, 0xdead, 0xff, 0xee,
-                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
-    .next = &test_var3,
-};
+// static uemu_variable lang_codes = {
+//     .name = L"PlatformLangCodes",
+//     .vendor_guid = EFI_GLOBAL_VARIABLE,
+//     .next = &lang,
+// };
 
-static uemu_variable test_var1 = {
-    .name = L"TestVariable1",
-    .vendor_guid = { 0xdeadbeef, 0xcafe, 0xdead, 0xff, 0xee,
-                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
-    .next = &test_var2,
-};
+static uemu_variable *variables = NULL;
 
-static uemu_variable *variables = &test_var1;
+efi_status efiapi uemu_get_variable(efi_ch16 *variable_name,
+    efi_guid *vendor_guid, efi_u32 *attrib, efi_size *data_size, void *data)
+{
+    printf("rt->get_variable(%s, %s)\n",
+        efi_to_ascii(variable_name), guid_to_ascii(vendor_guid));
+
+    if (variable_name == NULL || vendor_guid == NULL || data_size == NULL)
+        return EFI_INVALID_PARAMETER;
+
+    // NOTE: the spec is not clear whether we should check for this condition
+    // right away or only after we discover the actual size of the variable
+    // is greater than zero
+    if (*data_size > 0 && data == NULL)
+        return EFI_INVALID_PARAMETER;
+
+    // Search for matching variable
+    uemu_variable *uvar = variables;
+    while (uvar) {
+        if (memcmp(&uvar->vendor_guid, vendor_guid, sizeof *vendor_guid) == 0
+                    && efi_strcmp(uvar->name, variable_name) == 0)
+        uvar = uvar->next;
+    }
+    if (!uvar)
+        return EFI_NOT_FOUND;
+
+    // Always copy attributes, even if the buffer is too small
+    if (attrib)
+        *attrib = uvar->attrib;
+
+    // Make sure the buffer is large enough
+    efi_size buffer_size = *data_size;
+    *data_size = uvar->data_size;
+    if (buffer_size < *data_size)
+        return EFI_BUFFER_TOO_SMALL;
+
+    memcpy(data, uvar->data, *data_size);
+    return EFI_SUCCESS;
+}
 
 efi_status efiapi uemu_get_next_variable_name(efi_size *variable_name_size,
     efi_ch16 *variable_name, efi_guid *vendor_guid)
