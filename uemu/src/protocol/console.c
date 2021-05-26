@@ -307,6 +307,16 @@ static efi_status efiapi text_out_enable_cursor(
     return EFI_UNSUPPORTED;
 }
 
+// FIXME: use these fields instead of console internal ones
+static efi_simple_text_out_mode text_out_mode = {
+    .max_mode = 0,
+    .mode = 0,
+    .attr = 0,
+    .cursor_col = 0,
+    .cursor_row = 0,
+    .cursor_visible = 0,
+};
+
 //
 // Translate an SDL keyboard event to an efi_in_key
 //
@@ -465,6 +475,7 @@ ConsoleHandle *console_init(ConsoleExitCallback exit_callback)
     self->text_out.clear_screen = text_out_clear_screen;
     self->text_out.set_cursor_pos = text_out_set_cursor_pos;
     self->text_out.enable_cursor = text_out_enable_cursor;
+    self->text_out.mode = &text_out_mode;
 
     // Create event loop thread
     self->keep_running = 1;

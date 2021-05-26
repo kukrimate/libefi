@@ -58,15 +58,15 @@ static int load_nthdrs64(int fd, u32 nthdr_offs, IMAGE_NT_HEADERS64 *nthdrs64)
 #define ROUND_UP(val, bound) (((val) + (bound) - 1) / (bound) * (bound))
 
 // Calculate the expected size of all headers
-static u32 sizeof_headers_aligned(u32 nthdr_offs, IMAGE_NT_HEADERS64 *nthdrs64)
-{
-    u32 unaligned_size =
-           sizeof nthdrs64->Signature +
-           sizeof nthdrs64->FileHeader +
-           nthdrs64->FileHeader.SizeOfOptionalHeader +
-           nthdrs64->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
-    return ROUND_UP(nthdr_offs + unaligned_size, nthdrs64->OptionalHeader.FileAlignment);
-}
+// static u32 sizeof_headers_aligned(u32 nthdr_offs, IMAGE_NT_HEADERS64 *nthdrs64)
+// {
+//     u32 unaligned_size =
+//            sizeof nthdrs64->Signature +
+//            sizeof nthdrs64->FileHeader +
+//            nthdrs64->FileHeader.SizeOfOptionalHeader +
+//            nthdrs64->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+//     return ROUND_UP(nthdr_offs + unaligned_size, nthdrs64->OptionalHeader.FileAlignment);
+// }
 
 // Sanity check NT headers
 static _Bool validate_nthdrs(u32 nthdrs_offs, IMAGE_NT_HEADERS64 *nthdrs64)
@@ -82,11 +82,11 @@ static _Bool validate_nthdrs(u32 nthdrs_offs, IMAGE_NT_HEADERS64 *nthdrs64)
     }
     // Make sure the section alingment is a multiple of the page size
     u32 section_align = nthdrs64->OptionalHeader.SectionAlignment;
-    if (section_align < getpagesize() || section_align % getpagesize()) {
-        fputs("Invalid section alingment, "
-                "must be a multiple of the current page size!\n", stderr);
-        return 0;
-    }
+    // if (section_align < getpagesize() || section_align % getpagesize()) {
+    //     fputs("Invalid section alingment, "
+    //             "must be a multiple of the current page size!\n", stderr);
+    //     return 0;
+    // }
     u32 image_size = nthdrs64->OptionalHeader.SizeOfImage;
     if (image_size % section_align) {
         fputs("Invalid image size, "
@@ -94,11 +94,11 @@ static _Bool validate_nthdrs(u32 nthdrs_offs, IMAGE_NT_HEADERS64 *nthdrs64)
         return 0;
     }
     u32 header_size = nthdrs64->OptionalHeader.SizeOfHeaders;
-    if (header_size != sizeof_headers_aligned(nthdrs_offs, nthdrs64)) {
-        fputs("Invalid total headers size, "
-                "differs from expected value!\n", stderr);
-        return 0;
-    }
+    // if (header_size != sizeof_headers_aligned(nthdrs_offs, nthdrs64)) {
+    //     fputs("Invalid total headers size, "
+    //             "differs from expected value!\n", stderr);
+    //     return 0;
+    // }
     if (header_size > image_size) {
         fputs("Invalid total headers size, "
                 "can't be greater than total image size!\n", stderr);
@@ -149,8 +149,8 @@ static int load_pe_sections(int fd, void *image)
     void *image_cur = image + nthdrs64->OptionalHeader.SizeOfHeaders;
     void *image_end = image + nthdrs64->OptionalHeader.SizeOfImage;
 
-    // Save page size for loop
-    int page_size = getpagesize();
+    // Section alingment boundary
+    u32 section_align = nthdrs64->OptionalHeader.SectionAlignment;
 
     u16 section_cnt = nthdrs64->FileHeader.NumberOfSections;
     for (; section_cnt; --section_cnt, ++section) {
@@ -163,7 +163,7 @@ static int load_pe_sections(int fd, void *image)
 
         void *section_start = image + section->VirtualAddress;
         void *section_end = section_start
-            + ROUND_UP(section->Misc.VirtualSize, page_size);
+            + ROUND_UP(section->Misc.VirtualSize, section_align);
 
         // Make sure SizeOfRawData fits into the rounded up section size
         if (section->SizeOfRawData > section_end - section_start) {
@@ -242,6 +242,8 @@ static int apply_pe_relocs(u64 orig_base, void *image)
     return 0;
 }
 
+// Crash at: 0x4ddd6
+
 //
 // Load a PE32+ image into memory
 //
@@ -273,8 +275,8 @@ void *load_pe_image(int fd)
         goto err;
     }
 
-    // printf("Original image base: %p\n", (void *) orig_base);
-    // printf("Real image base:     %p\n", image_addr);
+    printf("Original image base: %p\n", (void *) orig_base);
+    printf("Real image base:     %p\n", image_addr);
 
     // Load headers
     ssize_t len = pread(fd,
@@ -287,7 +289,7 @@ void *load_pe_image(int fd)
     }
     // Load sections
     if (load_pe_sections(fd, image_addr) < 0) {
-        fputs("Failed to load section!\n", stderr);
+        fputs("Failed to load sections!\n", stderr);
         goto err;
     }
     // Perform base relocations if necessary

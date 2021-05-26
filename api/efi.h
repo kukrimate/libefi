@@ -32,7 +32,7 @@ typedef struct {
 
 // EFI Inteface type
 typedef enum {
-    efi_native_inteface
+    efi_native_interface
 } efi_interface_type;
 
 // EFI time
@@ -153,6 +153,7 @@ typedef struct efi_system_table efi_system_table;
 #include <protocol/efi_file_protocol.h>
 #include <protocol/efi_simple_file_system.h>
 #include <protocol/efi_graphics_output.h>
+#include <protocol/efi_hii_database.h>
 
 // EFI tables
 typedef struct {
@@ -207,10 +208,10 @@ typedef struct {
         void *interface);
     efi_status (efiapi *reinstall_protocol_interface)(
         efi_handle handle,
-        efi_guid protocol,
+        efi_guid *protocol,
         void *old_interface,
         void *new_interface);
-    efi_status (efiapi *uninstall_protocol_interface)(efi_handle handle, efi_guid *protocol, void *interace);
+    efi_status (efiapi *uninstall_protocol_interface)(efi_handle handle, efi_guid *protocol, void *interface);
     efi_status (efiapi *handle_protocol)(efi_handle handle, efi_guid *protocol, void **interface);
     void *reserved;
     efi_status (efiapi *register_protocol_notify)(efi_guid *protocol, efi_event event, void **registration);

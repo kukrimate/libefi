@@ -6,10 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <efi.h>
+#include "efiemu.h"
 #include "util.h"
 
 //
-// Services that were not implemented yet
+// Not implemented yet
 //
 
 static efi_status efiapi unsupported_stub()
@@ -22,8 +23,10 @@ static efi_status efiapi unsupported_stub()
 //
 
 static efi_status efiapi uemu_allocate_pool(efi_memory_type pool_type,
-                                            efi_size size, void **buffer)
+    efi_size size, void **buffer)
 {
+    printf("bs->allocate_pool(%d, %ld, %p)\n", pool_type, size, buffer);
+
     if (pool_type < efi_reserved_memory_type
             || pool_type >= efi_max_memory_type
             || buffer == NULL)
@@ -38,125 +41,36 @@ static efi_status efiapi uemu_allocate_pool(efi_memory_type pool_type,
 
 static efi_status efiapi uemu_free_pool(void *buffer)
 {
+    printf("bs->free_pool(%p)\n", buffer);
+
     free(buffer);
     return EFI_SUCCESS;
 }
 
 static efi_status efiapi uemu_wait_for_event(efi_size num_events,
-                                             efi_event *event,
-                                             efi_size *index)
+    efi_event *event, efi_size *index)
 {
     return EFI_INVALID_PARAMETER;
 }
 
-//
-// Protocol services
-//
 
-typedef struct uemu_protocol uemu_protocol;
-struct uemu_protocol {
-    efi_guid *guid;
-    void     *interface;
-    uemu_protocol *next;
-};
-
-typedef struct uemu_handle uemu_handle;
-struct uemu_handle {
-    uemu_protocol *protocols;
-    uemu_handle *next;
-};
-
-// Start with an empty handle database
-static uemu_handle *handles = NULL;
-
-static uemu_handle *uemu_new_handle(void)
+static efi_status efiapi uemu_calculate_crc32(void *data, efi_size data_size,
+    efi_u32 *crc32)
 {
-    uemu_handle *new_handle = malloc(sizeof *new_handle);
-    new_handle->next = handles;
-    handles = new_handle;
-    return new_handle;
-}
-
-void uemu_expose_protocol(efi_guid *with_guid, void *interface)
-{
-    uemu_handle *handle = uemu_new_handle();
-    uemu_protocol *proto = malloc(sizeof *proto);
-    proto->guid = with_guid;
-    proto->interface = interface;
-    proto->next = NULL;
-    handle->protocols = proto;
-}
-
-static efi_status efiapi uemu_handle_protocol(efi_handle handle,
-                                              efi_guid *protocol,
-                                              void **interface)
-{
-    // Invalid handle, this error code is in the spec
-    if (handle == NULL)
-        return EFI_INVALID_PARAMETER;
-
-    // Search for protocol
-    uemu_protocol *proto = ((uemu_handle *) handle)->protocols;
-    while (proto) {
-        if (!memcmp(proto->guid, protocol, sizeof *protocol)) {
-            *interface = proto->interface;
-            return EFI_SUCCESS;
-        }
-        proto = proto->next;
-    }
-
-    // No protocol with the requested GUID, error code not specified but EDK2
-    // also returns this
+    printf("WARN: bs->calculate_crc32() unsupported!\n");
     return EFI_UNSUPPORTED;
 }
 
-static _Bool handle_has_guid(uemu_handle *handle, efi_guid *guid)
+static void efiapi uemu_copy_mem(void *dest, void *src, efi_size length)
 {
-    uemu_protocol *proto = handle->protocols;
-    while (proto) {
-        if (!memcmp(proto->guid, guid, sizeof *guid))
-            return 1;
-        proto = proto->next;
-    }
-    return 0;
+    printf("bs->copy_mem(%p, %p, %ld)\n", dest, src, length);
+    memcpy(dest, src, length);
 }
 
-static efi_status efiapi uemu_locate_handle(efi_locate_search_type search_type,
-                                            efi_guid *protocol,
-                                            void *search_key,
-                                            efi_size *buffer_size,
-                                            efi_handle *buffer)
+static void efiapi uemu_set_mem(void *buffer, efi_size size, efi_u8 value)
 {
-    // printf("bs->locate_handle(%d, %s)\n", search_type, guid_to_ascii(protocol));
-
-    if (search_type == by_register_notify)
-        return EFI_UNSUPPORTED;
-
-    // First we count the handles
-    efi_size handle_cnt = 0;
-    for (uemu_handle *cur = handles; cur; cur = cur->next) {
-        if (search_type == all_handles || handle_has_guid(cur, protocol)) {
-            ++handle_cnt;
-        }
-    }
-
-    // Calculate necessary buffer size
-    efi_size orig_buffer_size = *buffer_size;
-    *buffer_size = handle_cnt * sizeof(efi_handle);
-
-    // Return indicator if we can't fit all handles
-    if (orig_buffer_size < *buffer_size) {
-        return EFI_BUFFER_TOO_SMALL;
-    }
-
-    // Return handles
-    efi_size handle_idx = 0;
-    for (uemu_handle *cur = handles; cur; cur = cur->next) {
-        if (search_type == all_handles || handle_has_guid(cur, protocol)) {
-            buffer[handle_idx] = (efi_handle) cur;
-        }
-    }
-    return EFI_SUCCESS;
+    printf("bs->set_mem(%p, %ld, %02x)\n", buffer, size, value);
+    memset(buffer, value, size);
 }
 
 efi_boot_services uemu_bs = {
@@ -180,9 +94,9 @@ efi_boot_services uemu_bs = {
     .check_event    = unsupported_stub,
 
     // Protocol services
-    .install_protocol_interface   = unsupported_stub,
-    .reinstall_protocol_interface = unsupported_stub,
-    .uninstall_protocol_interface = unsupported_stub,
+    .install_protocol_interface   = uemu_install_protocol_interface,
+    .reinstall_protocol_interface = uemu_reinstall_protocol_interface,
+    .uninstall_protocol_interface = uemu_uninstall_protocol_interface,
     .handle_protocol              = uemu_handle_protocol,
     .reserved                     = unsupported_stub,
     .register_protocol_notify     = unsupported_stub,
@@ -201,90 +115,33 @@ efi_boot_services uemu_bs = {
     .get_next_monotonic_count = unsupported_stub,
     .stall                    = unsupported_stub,
     .set_watchdog_timer       = unsupported_stub,
+
+    // Driver support services
+    .connect_controller    = unsupported_stub,
+    .disconnect_controller = unsupported_stub,
+
+    // Open and close protocol services
+    .open_protocol             = uemu_open_protocol,
+    .close_protocol            = uemu_close_protocol,
+    .open_protocol_information = uemu_open_protocol_information,
+
+    // Library services
+    .protocols_per_handle                   = unsupported_stub,
+    .locate_handle_buffer                   = unsupported_stub,
+    .locate_protocol                        = uemu_locate_protocol,
+    .install_multiple_protocol_interfaces   = unsupported_stub,
+    .uninstall_multiple_protocol_interfaces = unsupported_stub,
+
+    // CRC32
+    .calculate_crc32 = uemu_calculate_crc32,
+
+    // Misc services
+    .copy_mem =        uemu_copy_mem,
+    .set_mem =         uemu_set_mem,
+
+    // UEFI 2.0+ event service
+    .create_event_ex = unsupported_stub,
 };
-
-//
-// Variable services
-//
-
-typedef struct uemu_variable uemu_variable;
-struct uemu_variable {
-    efi_u32  attrib;
-    efi_ch16 *name;
-    efi_guid vendor_guid;
-    uemu_variable *next;
-};
-
-static uemu_variable test_var3 = {
-    .name = L"VariableNo3",
-    .vendor_guid = { 0xcafebabe, 0xcafe, 0xdead, 0xff, 0xee,
-                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
-    .next = NULL,
-};
-
-static uemu_variable test_var2 = {
-    .name = L"TestVariable2",
-    .vendor_guid = { 0xdeadbeef, 0xcafe, 0xdead, 0xff, 0xee,
-                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
-    .next = &test_var3,
-};
-
-static uemu_variable test_var1 = {
-    .name = L"TestVariable1",
-    .vendor_guid = { 0xdeadbeef, 0xcafe, 0xdead, 0xff, 0xee,
-                        0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 },
-    .next = &test_var2,
-};
-
-static uemu_variable *variables = &test_var1;
-
-static efi_status efiapi uemu_get_next_variable_name(
-        efi_size *variable_name_size,
-        efi_ch16 *variable_name,
-        efi_guid *vendor_guid)
-{
-    if (!variable_name_size || !variable_name || !vendor_guid)
-        return EFI_INVALID_PARAMETER;
-    if (*variable_name_size < sizeof(efi_ch16))
-        return EFI_INVALID_PARAMETER;
-    // Verify that the string actually has a NUL terminator somewhere
-    for (efi_size idx = 0; idx < *variable_name_size; ++idx)
-        if (variable_name[idx] == 0)
-            goto has_nul;
-    return EFI_INVALID_PARAMETER;
-has_nul:;
-
-    uemu_variable *var = variables;
-    // Unless we got an empty string, we must continue a previous search
-    if (*variable_name != 0) {
-        while (var) {
-            if (memcmp(&var->vendor_guid, vendor_guid, sizeof *vendor_guid) == 0
-                    && efi_strcmp(var->name, variable_name) == 0)
-                goto found;
-            var = var->next;
-        }
-        // The input values must name an existing variable
-        return EFI_INVALID_PARAMETER;
-found:
-        // Continue searching at the next variable
-        var = var->next;
-    }
-
-    // No more variables left
-    if (!var)
-        return EFI_NOT_FOUND;
-
-    // Make sure the variable name fits into the buffer
-    efi_size oldsize = *variable_name_size;
-    *variable_name_size = efi_strsize(var->name);
-    if (oldsize < *variable_name_size)
-        return EFI_BUFFER_TOO_SMALL;
-
-    // Copy variable name and GUID
-    memcpy(variable_name, var->name, *variable_name_size);
-    memcpy(vendor_guid, &var->vendor_guid, sizeof *vendor_guid);
-    return EFI_SUCCESS;
-}
 
 efi_runtime_services uemu_rt = {
     .get_time = unsupported_stub,
@@ -301,6 +158,11 @@ efi_runtime_services uemu_rt = {
 
     .get_next_high_monotonic_count = unsupported_stub,
     .reset_system = unsupported_stub,
+
+    .update_capsule = unsupported_stub,
+    .query_capsule_capabilities = unsupported_stub,
+
+    .query_variable_info = unsupported_stub,
 };
 
 efi_system_table uemu_st = {
