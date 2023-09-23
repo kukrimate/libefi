@@ -6,13 +6,13 @@
 #define EFI_STATUS_H
 
 /* EFI status */
-typedef efi_size efi_status;
+typedef efi_size_t efi_status_t;
 
 /* Macro for defining error codes */
-#define EFIERR(x) (x | SIZE_MAX_BIT)
+#define EFIERR(x) (x | EFI_SIZE_MAX_BIT)
 
 /* Macro for checking if a status code is an error */
-#define EFI_ERROR(x) (x & SIZE_MAX_BIT)
+#define EFI_ERROR(x) (x & EFI_SIZE_MAX_BIT)
 
 /* Success status code */
 #define EFI_SUCCESS 0

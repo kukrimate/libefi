@@ -6,20 +6,19 @@
 #define EFI_HII_DATABASE_H
 
 #define EFI_HII_DATABASE_PROTOCOL_GUID \
-    { 0xef9fc172, 0xa1b2, 0x4693, 0xb3, 0x27, 0x6d, 0x32, 0xfc, 0x41, \
-        0x60, 0x42 }
+  { 0xef9fc172, 0xa1b2, 0x4693, 0xb3, 0x27, 0x6d, 0x32, 0xfc, 0x41, 0x60, 0x42 }
 
-typedef void *efi_hii_handle;
+typedef void *efi_hii_handle_t;
 
 //
 // HII Package
 //
 
 typedef struct {
-    efi_u32 length : 24;
-    efi_u32 type   : 8;
-    efi_u8  data[1];
-} efi_hii_package_header;
+  efi_u32_t length : 24;
+  efi_u32_t type   : 8;
+  efi_u8_t  data[1];
+} efi_hii_package_header_t;
 
 #define EFI_HII_PACKAGE_TYPE_ALL             0x00
 #define EFI_HII_PACKAGE_TYPE_GUID            0x01
@@ -38,9 +37,9 @@ typedef struct {
 // HII Package List
 //
 typedef struct {
-    efi_guid package_list_guid;
-    efi_u32  package_length;
-} efi_hii_package_list_header;
+  efi_guid_t package_list_guid;
+  efi_u32_t  package_length;
+} efi_hii_package_list_header_t;
 
 //
 // HII Database Notification
@@ -51,42 +50,44 @@ typedef struct {
 #define EFI_HII_DATABASE_NOTIFY_EXPORT_PACK 0x00000004
 #define EFI_HII_DATABASE_NOTIFY_ADD_PACK    0x00000008
 
-typedef efi_status (efiapi *efi_hii_database_notify)(efi_u8 package_type,
-    efi_guid *package_guid, efi_hii_package_header *package,
-    efi_hii_handle handle, efi_size notify_type);
+typedef efi_status_t (efiapi *efi_hii_database_notify_t)(
+  efi_u8_t package_type, efi_guid_t *package_guid,
+  efi_hii_package_header_t *package, efi_hii_handle_t handle,
+  efi_size_t notify_type);
 
-typedef struct efi_hii_database_protocol efi_hii_database_protocol;
+typedef struct efi_hii_database_protocol efi_hii_database_protocol_t;
+
 struct efi_hii_database_protocol {
-    efi_status (efiapi *new_package_list)(efi_hii_database_protocol *self,
-        efi_hii_package_list_header *package_list, efi_handle driver_handle,
-        efi_hii_handle *handle);
-    efi_status (efiapi *remove_package_list)(efi_hii_database_protocol *self,
-        efi_hii_handle handle);
-    efi_status (efiapi *update_package_list)(efi_hii_database_protocol *self,
-        efi_hii_handle handle,
-        efi_hii_package_list_header *package_list);
-    efi_status (efiapi *list_package_lists)(efi_hii_database_protocol *self,
-        efi_u8 package_type, efi_guid *package_guid,
-        efi_size *buffer_size, efi_hii_handle *buffer);
-    efi_status (efiapi *export_package_lists)(efi_hii_database_protocol *self,
-        efi_hii_handle handle, efi_size *buffer_size,
-        efi_hii_package_list_header *buffer);
-    efi_status (efiapi *register_package_notify)(efi_hii_database_protocol *self,
-        efi_u8 package_type, efi_guid *package_guid,
-        efi_hii_database_notify notify_function,
-        efi_size notify_type, efi_handle *notify_handle);
-    efi_status (efiapi *unregister_package_notify)(efi_hii_database_protocol *self,
-        efi_handle notify_handle);
-    efi_status (efiapi *find_keyboard_layouts)(efi_hii_database_protocol *self,
-        efi_u16 *key_guid_buffer_length,
-        efi_guid *key_guid_buffer);
-    efi_status (efiapi *get_keyboard_layout)(efi_hii_database_protocol *self,
-        efi_guid *key_guid, efi_u16 *keyboard_layout_length,
-        void *keyboard_layout);
-    efi_status (efiapi *set_keyboard_layout)(efi_hii_database_protocol *self,
-        efi_guid *key_guid);
-    efi_status (efiapi *get_package_list_handle)(efi_hii_database_protocol *self,
-        efi_hii_handle package_list_handle, efi_handle *driver_handle);
+  efi_status_t (efiapi *new_package_list)(efi_hii_database_protocol_t *self,
+    efi_hii_package_list_header_t *package_list, efi_handle_t driver_handle,
+    efi_hii_handle_t *handle);
+  efi_status_t (efiapi *remove_package_list)(efi_hii_database_protocol_t *self,
+    efi_hii_handle_t handle);
+  efi_status_t (efiapi *update_package_list)(efi_hii_database_protocol_t *self,
+    efi_hii_handle_t handle, efi_hii_package_list_header_t *package_list);
+  efi_status_t (efiapi *list_package_lists)(efi_hii_database_protocol_t *self,
+    efi_u8_t package_type, efi_guid_t *package_guid, efi_size_t *buffer_size,
+    efi_hii_handle_t *buffer);
+  efi_status_t (efiapi *export_package_lists)(efi_hii_database_protocol_t *self,
+    efi_hii_handle_t handle, efi_size_t *buffer_size,
+    efi_hii_package_list_header_t *buffer);
+  efi_status_t (efiapi *register_package_notify)(
+    efi_hii_database_protocol_t *self, efi_u8_t package_type,
+    efi_guid_t *package_guid, efi_hii_database_notify_t notify_function,
+    efi_size_t notify_type, efi_handle_t *notify_handle);
+  efi_status_t (efiapi *unregister_package_notify)(
+    efi_hii_database_protocol_t *self, efi_handle_t notify_handle);
+  efi_status_t (efiapi *find_keyboard_layouts)(
+    efi_hii_database_protocol_t *self, efi_u16_t *key_guid_buffer_length,
+    efi_guid_t *key_guid_buffer);
+  efi_status_t (efiapi *get_keyboard_layout)(efi_hii_database_protocol_t *self,
+    efi_guid_t *key_guid, efi_u16_t *keyboard_layout_length,
+    void *keyboard_layout);
+  efi_status_t (efiapi *set_keyboard_layout)(efi_hii_database_protocol_t *self,
+    efi_guid_t *key_guid);
+  efi_status_t (efiapi *get_package_list_handle)(
+    efi_hii_database_protocol_t *self, efi_hii_handle_t package_list_handle,
+    efi_handle_t *driver_handle);
 };
 
 #endif

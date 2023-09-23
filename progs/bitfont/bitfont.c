@@ -8,26 +8,24 @@
 /*
  * Setup an fbinfo struct from UEFI GOP
  */
-static
-efi_status
-gop_to_fbinfo(struct fbinfo *fb)
+static efi_status_t gop_to_fbinfo(struct fbinfo *fb)
 {
-	efi_status status;
-	efi_graphics_output_protocol *gop;
+	efi_status_t status;
+	efi_graphics_output_protocol_t *gop;
 
 	status = locate_protocol(
-		&(efi_guid) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
+		&(efi_guid_t) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
 		(void **) &gop);
 	if (EFI_ERROR(status))
 		goto done;
 
 	switch (gop->mode->info->pixel_format) {
-	case pixel_red_green_blue_reserved_8_bit_per_color:
+	case EFI_PIXEL_FORMAT_RGB8:
 		fb->red_idx = 0;
 		fb->grn_idx = 1;
 		fb->blu_idx = 2;
 		break;
-	case pixel_blue_green_red_reserved_8_bit_per_color:
+	case EFI_PIXEL_FORMAT_BGR8:
 		fb->red_idx = 2;
 		fb->grn_idx = 1;
 		fb->blu_idx = 0;
@@ -47,13 +45,11 @@ done:
 	return status;
 }
 
-efi_status
-efiapi
-efi_main(efi_handle image_handle, efi_system_table *system_table)
+efi_status_t efiapi efi_main(efi_handle_t image_handle, efi_system_table_t *system_table)
 {
-	efi_status status;
+	efi_status_t status;
 	struct fbinfo fb;
-	efi_size index;
+	efi_size_t index;
 
 	efi_init(image_handle, system_table);
 

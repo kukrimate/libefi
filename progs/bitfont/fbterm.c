@@ -8,8 +8,7 @@
 #include "font.h"
 #include "fbterm.h"
 
-void
-fb_plot(struct fbinfo *fb,
+void fb_plot(struct fbinfo *fb,
 	 uint32_t x, uint32_t y, uint8_t r, uint8_t g, uint8_t b)
 {
 	unsigned char *pixel =
@@ -19,8 +18,7 @@ fb_plot(struct fbinfo *fb,
 	pixel[fb->blu_idx] = b;
 }
 
-void
-fb_clear(struct fbinfo *fb, uint8_t r, uint8_t g, uint8_t b)
+void fb_clear(struct fbinfo *fb, uint8_t r, uint8_t g, uint8_t b)
 {
 	uint32_t x, y;
 
@@ -32,8 +30,7 @@ fb_clear(struct fbinfo *fb, uint8_t r, uint8_t g, uint8_t b)
 static struct font *fb_font = &font_8x16;
 static uint32_t fb_row = 0, fb_col = 0;
 
-void
-fb_putchar(struct fbinfo *fb, char ch)
+void fb_putchar(struct fbinfo *fb, char ch)
 {
 	unsigned char *glyph;
 	uint8_t line, bit;
@@ -78,13 +75,10 @@ fb_putchar(struct fbinfo *fb, char ch)
 	}
 }
 
-static
-const char *digits = "0123456789abcdef";
+static const char *digits = "0123456789abcdef";
 
 #define genprint(U, S) \
-static \
-void \
-fb_print_##U(struct fbinfo *fb, U num, int base) \
+static void fb_print_##U(struct fbinfo *fb, U num, int base) \
 { \
 	char buf[20], *p; \
 \
@@ -99,9 +93,7 @@ fb_print_##U(struct fbinfo *fb, U num, int base) \
 		fb_putchar(fb, *p); \
 } \
 \
-static \
-void \
-fb_print_##S(struct fbinfo *fb, S num, int base) \
+static void fb_print_##S(struct fbinfo *fb, S num, int base) \
 { \
 	if (num < 0) { \
 		fb_putchar(fb, '-'); \
@@ -113,8 +105,7 @@ fb_print_##S(struct fbinfo *fb, S num, int base) \
 genprint(uint32_t, int32_t)
 genprint(uint64_t, int64_t)
 
-void
-fb_print(struct fbinfo *fb, const char *fmt, ...)
+void fb_print(struct fbinfo *fb, const char *fmt, ...)
 {
 	va_list va;
 	_Bool wide;

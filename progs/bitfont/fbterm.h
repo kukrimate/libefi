@@ -14,17 +14,13 @@ struct fbinfo {
 	uint8_t red_idx, grn_idx, blu_idx;
 };
 
-void
-fb_plot(struct fbinfo *fb,
+void fb_plot(struct fbinfo *fb,
 	 uint32_t x, uint32_t y, uint8_t r, uint8_t g, uint8_t b);
 
-void
-fb_clear(struct fbinfo *fb, uint8_t r, uint8_t g, uint8_t b);
+void fb_clear(struct fbinfo *fb, uint8_t r, uint8_t g, uint8_t b);
 
-void
-fb_putchar(struct fbinfo *fb, char ch);
+void fb_putchar(struct fbinfo *fb, char ch);
 
-void
-fb_print(struct fbinfo *fb, const char *fmt, ...);
+void fb_print(struct fbinfo *fb, const char *fmt, ...);
 
 #endif
