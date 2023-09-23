@@ -1,3 +1,6 @@
+# LSP
+.cache
+compile_commands.json
 # Artifacts
 *.o
 *.a
