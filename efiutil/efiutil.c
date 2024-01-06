@@ -244,3 +244,44 @@ retry:
 
 	return status;
 }
+
+efi_status_t efi_read_file(efi_handle_t device_handle, efi_ch16_t *file_path,
+	efi_size_t *out_size, void **out_data)
+{
+	efi_status_t status = EFI_SUCCESS;
+	efi_simple_file_system_protocol_t *file_system = NULL;
+	efi_file_protocol_t *volume_file = NULL, *file = NULL;
+	efi_file_info_t *file_info = NULL;
+
+	status = locate_protocol(&(efi_guid_t) EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID, (void **) &file_system);
+	if (status != EFI_SUCCESS)
+		goto out;
+
+	status = file_system->open_volume(file_system, &volume_file);
+	if (status != EFI_SUCCESS)
+		goto out;
+
+	status = volume_file->open(volume_file, &file, file_path, EFI_FILE_MODE_READ, 0);
+	if (status != EFI_SUCCESS)
+		goto out;
+
+	status = get_file_info(file, &file_info);
+	if (status != EFI_SUCCESS)
+		goto out;
+
+	*out_size = file_info->file_size;
+	*out_data = efi_alloc(*out_size);
+
+	status = file->read(file, out_size, *out_data);
+	if (status != EFI_SUCCESS)
+		efi_free(*out_data);
+
+out:
+	if (file_info)
+		efi_free(file_info);
+	if (file)
+		file->close(file);
+	if (volume_file)
+		volume_file->close(volume_file);
+	return status;
+}

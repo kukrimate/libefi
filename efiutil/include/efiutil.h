@@ -100,4 +100,10 @@ efi_status_t locate_protocol(efi_guid_t *protocol, void **iface);
  */
 efi_status_t get_file_info(efi_file_protocol_t *file, efi_file_info_t **file_info);
 
+/*
+ * Read a file from a filesytem
+ */
+efi_status_t efi_read_file(efi_handle_t device_handle, efi_ch16_t *file_path,
+    efi_size_t *out_size, void **out_data);
+
 #endif
