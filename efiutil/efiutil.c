@@ -4,23 +4,23 @@
 #include <efi.h>
 #include <efiutil.h>
 
-efi_handle_t self_image_handle;
-efi_system_table_t *st;
-efi_boot_services_t *bs;
-efi_runtime_services_t *rt;
+efi_handle_t efi_image_handle;
+efi_system_table_t *efi_st;
+efi_boot_services_t *efi_bs;
+efi_runtime_services_t *efi_rt;
 
 void efi_init(efi_handle_t image_handle, efi_system_table_t *system_table)
 {
-	self_image_handle = image_handle;
-	st = system_table;
-	bs = system_table->boot_services;
-	rt = system_table->runtime_services;
+	efi_image_handle = image_handle;
+	efi_st = system_table;
+	efi_bs = system_table->boot_services;
+	efi_rt = system_table->runtime_services;
 }
 
 void efi_abort(efi_ch16_t *error_msg, efi_status_t status)
 {
 	efi_print(error_msg);
-	bs->exit(self_image_handle, status, 0, NULL);
+	efi_bs->exit(efi_image_handle, status, 0, NULL);
 
 	/* We can't do much if exit fails */
 	for (;;)
@@ -38,7 +38,7 @@ void *efi_alloc(efi_size_t size)
 	efi_status_t status;
 	void *buffer;
 
-	status = bs->allocate_pool(EFI_LOADER_DATA, size, &buffer);
+	status = efi_bs->allocate_pool(EFI_LOADER_DATA, size, &buffer);
 	if (EFI_ERROR(status))
 		efi_abort(L"Cannot allocate memory!\n", status);
 	return buffer;
@@ -46,7 +46,7 @@ void *efi_alloc(efi_size_t size)
 
 void efi_free(void *buffer)
 {
-	bs->free_pool(buffer);
+	efi_bs->free_pool(buffer);
 }
 
 void *efi_realloc(void *oldptr, efi_size_t oldsize, efi_size_t newsize)
@@ -129,8 +129,7 @@ static void fill_file_path_dp_node(efi_filepath_device_path_t *node, efi_ch16_t 
 	memcpy(node->path_name, str, len);
 }
 
-efi_device_path_protocol_t *merge_device_paths(efi_device_path_protocol_t *first,
-	efi_device_path_protocol_t *second)
+efi_device_path_protocol_t *efi_dp_merge(efi_device_path_protocol_t *first, efi_device_path_protocol_t *second)
 {
 	efi_size_t first_len;
 	efi_size_t second_len;
@@ -152,8 +151,7 @@ efi_device_path_protocol_t *merge_device_paths(efi_device_path_protocol_t *first
 	return result;
 }
 
-efi_device_path_protocol_t *append_efi_filepath_device_path_t(
-	efi_device_path_protocol_t *base, efi_ch16_t *file_path)
+efi_device_path_protocol_t *efi_dp_append_file_path(efi_device_path_protocol_t *base, efi_ch16_t *file_path)
 {
 	efi_device_path_protocol_t *result;
 	efi_size_t base_len, file_path_len;
@@ -170,11 +168,10 @@ efi_device_path_protocol_t *append_efi_filepath_device_path_t(
 	return result;
 }
 
-efi_status_t locate_all_handles(efi_guid_t *protocol, efi_size_t *num_handles,
-	efi_handle_t **out_buffer)
+efi_status_t efi_locate_all_handles(efi_guid_t *protocol, efi_size_t *num_handles, efi_handle_t **out_buffer)
 {
 #ifdef USE_EFI110
-	return bs->locate_handle_buffer(EFI_LOCATE_BY_PROTOCOL, protocol, NULL, num_handles, out_buffer);
+	return efi_bs->locate_handle_buffer(EFI_LOCATE_BY_PROTOCOL, protocol, NULL, num_handles, out_buffer);
 #else
 	efi_status_t status;
 	efi_size_t buffer_size;
@@ -196,10 +193,10 @@ retry:
 #endif
 }
 
-efi_status_t locate_protocol(efi_guid_t *protocol, void **iface)
+efi_status_t efi_locate_protocol(efi_guid_t *protocol, void **iface)
 {
 #ifdef USE_EFI110
-	return bs->locate_protocol(protocol, NULL, iface);
+	return efi_bs->locate_protocol(protocol, NULL, iface);
 #else
 	efi_status_t status;
 	efi_size_t handle_cnt;
@@ -224,7 +221,7 @@ done:
 #endif
 }
 
-efi_status_t get_file_info(efi_file_protocol_t *file, efi_file_info_t **file_info)
+efi_status_t efi_get_file_info(efi_file_protocol_t *file, efi_file_info_t **file_info)
 {
 	efi_status_t status;
 	efi_size_t bufsize;
@@ -253,7 +250,7 @@ efi_status_t efi_read_file(efi_handle_t device_handle, efi_ch16_t *file_path,
 	efi_file_protocol_t *volume_file = NULL, *file = NULL;
 	efi_file_info_t *file_info = NULL;
 
-	status = locate_protocol(&(efi_guid_t) EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID, (void **) &file_system);
+	status = efi_bs->handle_protocol(device_handle, &(efi_guid_t) EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID, (void **) &file_system);
 	if (status != EFI_SUCCESS)
 		goto out;
 
@@ -265,7 +262,7 @@ efi_status_t efi_read_file(efi_handle_t device_handle, efi_ch16_t *file_path,
 	if (status != EFI_SUCCESS)
 		goto out;
 
-	status = get_file_info(file, &file_info);
+	status = efi_get_file_info(file, &file_info);
 	if (status != EFI_SUCCESS)
 		goto out;
 

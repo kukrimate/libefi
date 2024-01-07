@@ -13,7 +13,7 @@ static efi_status_t gop_to_fbinfo(struct fbinfo *fb)
 	efi_status_t status;
 	efi_graphics_output_protocol_t *gop;
 
-	status = locate_protocol(
+	status = efi_locate_protocol(
 		&(efi_guid_t) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
 		(void **) &gop);
 	if (EFI_ERROR(status))
@@ -63,6 +63,6 @@ efi_status_t efiapi efi_main(efi_handle_t image_handle, efi_system_table_t *syst
 	for (size_t i = 0; i < 10000; ++i)
 		fb_print(&fb, "Hello, World %ld!\n", i);
 
-	bs->wait_for_event(1, &st->con_in->wait_for_key, &index);
+	efi_bs->wait_for_event(1, &efi_st->con_in->wait_for_key, &index);
 	return status;
 }
