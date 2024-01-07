@@ -14,7 +14,7 @@ static efi_status_t alloc_aligned(efi_size_t alingment, efi_size_t bytes, void *
   efi_status_t status;
   efi_size_t off;
 
-  status = bs->allocate_pages(
+  status = efi_bs->allocate_pages(
     EFI_ALLOCATE_ANY_PAGES,
     EFI_LOADER_CODE,
     PAGE_COUNT(alingment + bytes),
@@ -44,8 +44,8 @@ static efi_status_t convert_mmap(struct boot_params *boot_params, efi_size_t *ma
   efi_size_t  e820_entries;
   struct boot_e820_entry  *e820_cur;
 
-  status = bs->handle_protocol(
-    self_image_handle,
+  status = efi_bs->handle_protocol(
+    efi_image_handle,
     &(efi_guid_t) EFI_LOADED_IMAGE_PROTOCOL_GUID,
     (void **) &loaded_image);
   if (EFI_ERROR(status))
@@ -55,7 +55,7 @@ static efi_status_t convert_mmap(struct boot_params *boot_params, efi_size_t *ma
   mmap_size = 0;
 
 retry:
-  status = bs->get_memory_map(
+  status = efi_bs->get_memory_map(
     &mmap_size,
     mmap,
     map_key,
@@ -134,7 +134,7 @@ static efi_status_t setup_video(struct boot_params *boot_params)
   efi_graphics_output_protocol_t *gop;
   efi_graphics_output_mode_information_t *mode_info;
 
-  status = locate_protocol(
+  status = efi_locate_protocol(
     &(efi_guid_t) EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
     (void **) &gop);
   if (EFI_ERROR(status))
@@ -190,17 +190,17 @@ done:
 static efi_status_t locate_self_volume(efi_simple_file_system_protocol_t **self_volume)
 {
   efi_status_t status;
-  efi_loaded_image_protocol_t *self_loaded_image;
+  efi_loaded_image_protocol_t *loaded_image;
 
-  status = bs->handle_protocol(
-    self_image_handle,
+  status = efi_bs->handle_protocol(
+    efi_image_handle,
     &(efi_guid_t) EFI_LOADED_IMAGE_PROTOCOL_GUID,
-    (void **) &self_loaded_image);
+    (void **) &loaded_image);
   if (EFI_ERROR(status))
     return status;
 
-  status = bs->handle_protocol(
-    self_loaded_image->device_handle,
+  status = efi_bs->handle_protocol(
+    loaded_image->device_handle,
     &(efi_guid_t) EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID,
     (void **) self_volume);
   return status;
@@ -230,7 +230,7 @@ static efi_status_t get_file_size(efi_file_protocol_t *file, efi_size_t *file_si
   efi_status_t  status;
   efi_file_info_t *file_info;
 
-  status = get_file_info(file, &file_info);
+  status = efi_get_file_info(file, &file_info);
   if (EFI_ERROR(status))
     return status;
 
@@ -260,7 +260,7 @@ static efi_status_t boot_linux(efi_ch16_t *kernel_path, efi_ch16_t *initrd_path,
 
   /* Allocate boot params + cmdline buffer */
   cmdline_size = strlen(cmdline) + 1;
-  status = bs->allocate_pages(
+  status = efi_bs->allocate_pages(
     EFI_ALLOCATE_ANY_PAGES,
     EFI_LOADER_DATA,
     PAGE_COUNT(sizeof(struct boot_params) + cmdline_size),
@@ -345,7 +345,7 @@ static efi_status_t boot_linux(efi_ch16_t *kernel_path, efi_ch16_t *initrd_path,
   if (EFI_ERROR(status))
     goto err_close_initrd;
 
-  status = bs->allocate_pages(
+  status = efi_bs->allocate_pages(
     EFI_ALLOCATE_ANY_PAGES,
     EFI_LOADER_DATA,
     PAGE_COUNT(initrd_size),
@@ -375,12 +375,12 @@ static efi_status_t boot_linux(efi_ch16_t *kernel_path, efi_ch16_t *initrd_path,
   boot_params->ext_ramdisk_size = (efi_u64_t) initrd_size >> 32;
 
   /* Find ACPI RSDP */
-  for (size_t i = 0; i < st->cnt_config_entries; ++i)
-    if (!memcmp(&st->config_entries[i].vendor_guid,
+  for (size_t i = 0; i < efi_st->cnt_config_entries; ++i)
+    if (!memcmp(&efi_st->config_entries[i].vendor_guid,
         &(efi_guid_t) EFI_ACPI_TABLE_GUID,
         sizeof(efi_guid_t)))
       boot_params->acpi_rsdp_addr =
-        (efi_size_t) st->config_entries[i].vendor_table;
+        (efi_size_t) efi_st->config_entries[i].vendor_table;
 
   /* Find the framebuffer */
   status = setup_video(boot_params);
@@ -392,7 +392,7 @@ static efi_status_t boot_linux(efi_ch16_t *kernel_path, efi_ch16_t *initrd_path,
   if (EFI_ERROR(status))
     return status;
   /* Get rid of boot services */
-  status = bs->exit_boot_services(self_image_handle, map_key);
+  status = efi_bs->exit_boot_services(efi_image_handle, map_key);
   if (EFI_ERROR(status))
     return status;
 
@@ -407,19 +407,19 @@ static efi_status_t boot_linux(efi_ch16_t *kernel_path, efi_ch16_t *initrd_path,
     : "rax", "rsi");
 
 err_free_initrd:
-  bs->free_pages((efi_physical_address_t) initrd_base,
+  efi_bs->free_pages((efi_physical_address_t) initrd_base,
     PAGE_COUNT(initrd_size));
 err_close_initrd:
   initrd_file->close(initrd_file);
 err_free_kernel:
-  bs->free_pages((efi_physical_address_t) kernel_base,
+  efi_bs->free_pages((efi_physical_address_t) kernel_base,
     PAGE_COUNT(boot_params->hdr.init_size));
 err_close_kernel:
   kernel_file->close(kernel_file);
 err_close_rootdir:
   root_dir->close(root_dir);
 err_free_boot_params:
-  bs->free_pages(
+  efi_bs->free_pages(
     (efi_physical_address_t) boot_params,
     PAGE_COUNT(sizeof(struct boot_params) + cmdline_size));
   return status;

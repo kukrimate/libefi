@@ -13,10 +13,10 @@
 /*
  * Globals for accessing UEFI
  */
-extern efi_handle_t self_image_handle;
-extern efi_system_table_t *st;
-extern efi_boot_services_t *bs;
-extern efi_runtime_services_t *rt;
+extern efi_handle_t efi_image_handle;
+extern efi_system_table_t *efi_st;
+extern efi_boot_services_t *efi_bs;
+extern efi_runtime_services_t *efi_rt;
 
 /*
  * Must be called before using the globals above
@@ -71,34 +71,34 @@ efi_size_t efi_strlen(efi_ch16_t *str);
 efi_size_t efi_strsize(efi_ch16_t *str);
 
 /*
- * Allocate a buffer to store the device paths pointed first
- * and second and merge them
+ * Merge two device path instances
  */
-efi_device_path_protocol_t *merge_device_paths(efi_device_path_protocol_t *first,
+efi_device_path_protocol_t *efi_dp_merge(
+    efi_device_path_protocol_t *first,
     efi_device_path_protocol_t *second);
 
 /*
- * Generate a file path device path from a string file path and merge it
- * with the device path pointed to by base
+ * Merge a device path and a file path converted to a device path
  */
-efi_device_path_protocol_t *append_efi_filepath_device_path_t(
+efi_device_path_protocol_t *efi_dp_append_file_path(
     efi_device_path_protocol_t *base, efi_ch16_t *file_path);
 
 /*
  * Locate all EFI handles that support the specified protocol
  */
-efi_status_t locate_all_handles(efi_guid_t *protocol, efi_size_t *num_handles,
-	efi_handle_t **out_buffer);
+efi_status_t efi_locate_all_handles(efi_guid_t *protocol,
+    efi_size_t *num_handles, efi_handle_t **out_buffer);
 
 /*
  * Locate the first instance of a protocol
  */
-efi_status_t locate_protocol(efi_guid_t *protocol, void **iface);
+efi_status_t efi_locate_protocol(efi_guid_t *protocol, void **iface);
 
 /*
  * Get the file info struct for file
  */
-efi_status_t get_file_info(efi_file_protocol_t *file, efi_file_info_t **file_info);
+efi_status_t efi_get_file_info(efi_file_protocol_t *file,
+    efi_file_info_t **file_info);
 
 /*
  * Read a file from a filesytem

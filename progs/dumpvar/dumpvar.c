@@ -21,7 +21,7 @@ efi_status_t efiapi efi_main(efi_handle_t image_handle, efi_system_table_t *syst
     // Get name and GUID for this variable
 retry:
     old_name_size = var_name_size;
-    status = rt->get_next_variable_name(&var_name_size, var_name, &vendor_guid);
+    status = efi_rt->get_next_variable_name(&var_name_size, var_name, &vendor_guid);
     if (status == EFI_BUFFER_TOO_SMALL) { // We need a bigger buffer
       var_name = efi_realloc(var_name, old_name_size, var_name_size);
       goto retry;

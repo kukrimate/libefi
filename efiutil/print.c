@@ -23,7 +23,7 @@
 //
 // Print a string to the default console
 //
-#define efi_puts(str) st->con_out->output_string(st->con_out, str)
+#define efi_puts(str) efi_st->con_out->output_string(efi_st->con_out, str)
 
 //
 // EFI can't do putchar directly, thus we need to emulate it

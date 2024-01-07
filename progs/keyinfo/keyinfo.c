@@ -9,12 +9,12 @@ efi_status_t efiapi efi_main(efi_handle_t image_handle, efi_system_table_t *syst
 {
   efi_init(image_handle, system_table);
 
-  st->con_in->reset(st->con_in, false);
-  st->con_out->clear_screen(st->con_out);
+  efi_st->con_in->reset(efi_st->con_in, false);
+  efi_st->con_out->clear_screen(efi_st->con_out);
 
   for (;;) {
     efi_in_key_t key;
-    while (st->con_in->read_key(st->con_in, &key) == EFI_NOT_READY)
+    while (efi_st->con_in->read_key(efi_st->con_in, &key) == EFI_NOT_READY)
       ;
 
     if (key.scan == EFI_SCAN_NULL) {
