@@ -1,0 +1,5 @@
+add_subdirectory(bitfont)
+add_subdirectory(dumpvar)
+add_subdirectory(hello)
+add_subdirectory(keyinfo)
+add_subdirectory(loadlin)

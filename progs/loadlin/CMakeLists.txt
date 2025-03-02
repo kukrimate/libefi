@@ -1,0 +1,7 @@
+if (${ARCH} STREQUAL amd64)
+add_executable(loadlin.efi loadlin.c)
+execute_process(COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE GIT_REV OUTPUT_STRIP_TRAILING_WHITESPACE)
+target_compile_options(loadlin.efi PRIVATE -DGIT_REV=L"git.${GIT_REV}")
+target_link_options(loadlin.efi PRIVATE ${LINK_EFI_APPLICATION})
+target_link_libraries(loadlin.efi PRIVATE efiapi efiutil)
+endif()

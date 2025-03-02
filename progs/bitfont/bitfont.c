@@ -35,7 +35,8 @@ static efi_status_t gop_to_fbinfo(struct fbinfo *fb)
 		goto done;
 	}
 
-	fb->base = gop->mode->frame_buffer_base;
+	// FIXME: theoretically frame buffer can be outside pointer range?
+	fb->base = (void *) (efi_size_t) gop->mode->frame_buffer_base;
 	fb->x_limit = gop->mode->info->horizontal_resolution;
 	fb->y_limit = gop->mode->info->vertical_resolution;
 	fb->linewidth = gop->mode->info->pixels_per_scan_line * EFI_GOP_PIXELWIDTH;

@@ -1,9 +1,6 @@
 /*
  * Formatted printing support
  *
- * There is no support printing standard C types, this is because in UEFI,
- *  fixed width types are preferred.
- *
  * The following format specifiers are supported:
  *  - %p:  pointers
  *  - %c:  efi_ch16_t
@@ -20,92 +17,59 @@
 #include <efi.h>
 #include <efiutil.h>
 
-//
-// Print a string to the default console
-//
-#define efi_puts(str) efi_st->con_out->output_string(efi_st->con_out, str)
+// Print string
+static void efi_puts(efi_ch16_t *str)
+{
+  efi_st->con_out->output_string(efi_st->con_out, str);
+}
 
-//
-// EFI can't do putchar directly, thus we need to emulate it
-//
+// Print character
 static void efi_putchar(efi_ch16_t ch)
 {
-  efi_ch16_t buffer[2];
-
-  buffer[0] = ch;
-  buffer[1] = 0;
-  efi_puts(buffer);
+  efi_puts((efi_ch16_t[]) {ch, 0});
 }
 
-//
-// Character set for integer to string conversion
-//
-static efi_ch16_t *digits = L"0123456789abcdef";
-
-//
-// Type specific integer to string conversion functions
-//
-#define GEN_PRINT(U, S)                                                        \
-                                                                               \
-static void efi_print_##U(U num, efi_size_t base, efi_size_t pad)              \
-{                                                                              \
-  efi_ch16_t buf[20];                                                          \
-  efi_ch16_t *p = buf + ARRAY_SIZE(buf);                                       \
-                                                                               \
-  *--p = 0;                                                                    \
-  do {                                                                         \
-    *--p = digits[num % base];                                                 \
-  } while (p >= buf && (num /= base));                                         \
-                                                                               \
-  efi_size_t numlen = ARRAY_SIZE(buf) - (p - buf) - 1;                         \
-  if (numlen < pad) {                                                          \
-    pad -= numlen;                                                             \
-    while (pad--)                                                              \
-      efi_putchar(L'0');                                                       \
-  }                                                                            \
-  for (; *p; ++p)                                                              \
-    efi_putchar(*p);                                                           \
-}                                                                              \
-                                                                               \
-static void efi_print_##S(S num, efi_size_t base)                              \
-{                                                                              \
-  if (num < 0) {                                                               \
-    efi_putchar(L'-');                                                         \
-    num *= -1;                                                                 \
-  }                                                                            \
-  efi_print_##U(num, base, 0);                                                 \
-}
-
-//
-// Fixed width types
-//
-GEN_PRINT(efi_u32_t, efi_i32_t)
-GEN_PRINT(efi_u64_t, efi_i64_t)
-
-//
-// Size type (also used for pointers)
-// NOTE: we assume efi_size_t can fit any pointer, this is true for all
-//   platforms supported by libefi
-//
-GEN_PRINT(efi_size_t, efi_ssize_t)
-
-//
 // Read the number of padding characters from the format string
-//
 static efi_size_t read_padcnt(efi_ch16_t **fmt)
 {
   efi_size_t cnt = 0;
-  efi_ch16_t *s = *fmt;
-
-  for (;; ++s)
-    switch (*s) {
+  for (;; ++*fmt)
+    switch (**fmt) {
     case L'0' ... L'9':
-      cnt = cnt * 10 + *s - L'0';
+      cnt = cnt * 10 + **fmt - L'0';
       break;
     default:
-      *fmt = s;
       return cnt;
     }
+}
+
+// Print formatted number
+static void print_num(unsigned long long num, efi_size_t base, efi_size_t pad, _Bool sig)
+{
+  _Bool neg = 0;
+  efi_ch16_t buf[20], *p = buf;
+
+  // Check for negative sign if caller says signed type
+  if (sig && (long long) num < 0) {
+    num *= -1ULL;
+    neg = 1;
+  }
+
+  // Convert digits
+  do
+    *p++ = L"0123456789abcdef"[num % base];
+  while ((num /= base));
+
+  // Print sign (if any)
+  if (neg)
+    efi_putchar(L'-');
+  // Print padding (if any)
+  for (efi_size_t i = p - buf + neg; i < pad; ++i)
+    efi_putchar(L'0');
+  // Print digits
+  do
+    efi_putchar(*--p);
+  while (p > buf);
 }
 
 void efi_print(efi_ch16_t *fmt, ...)
@@ -126,40 +90,41 @@ void efi_print(efi_ch16_t *fmt, ...)
         efi_puts(va_arg(va, efi_ch16_t *));
         break;
       case L'p':
-        efi_print_efi_size_t(va_arg(va, efi_size_t), 16, 0);
+        efi_puts(L"0x");
+        print_num((efi_size_t) va_arg(va, void *), /*base=*/16, /*pad=*/0, /*sign=*/0);
         break;
       case L'd': // 32-bit
-        efi_print_efi_i32_t(va_arg(va, efi_i32_t), 10);
+        print_num(va_arg(va, efi_i32_t), /*base=*/10, /*pad=*/0, /*sign=*/1);
         break;
       case L'u':
-        efi_print_efi_u32_t(va_arg(va, efi_u32_t), 10, 0);
+        print_num(va_arg(va, efi_u32_t), /*base=*/10, /*pad=*/0, /*sign=*/0);
         break;
       case L'x':
-        efi_print_efi_u32_t(va_arg(va, efi_u32_t), 16, 0);
+        print_num(va_arg(va, efi_u32_t), /*base=*/16, /*pad=*/0, /*sign=*/0);
         break;
       case L'0': // 0-padded
         ++fmt;
         padcnt = read_padcnt(&fmt);
         switch (*fmt) {
         case L'd': // 32-bit
-          efi_print_efi_i32_t(va_arg(va, efi_i32_t), 10);
+          print_num(va_arg(va, efi_i32_t), /*base=*/10, /*pad=*/padcnt, /*sign=*/1);
           break;
         case L'u':
-          efi_print_efi_u32_t(va_arg(va, efi_u32_t), 10, padcnt);
+          print_num(va_arg(va, efi_u32_t), /*base=*/10, /*pad=*/padcnt, /*sign=*/0);
           break;
         case L'x':
-          efi_print_efi_u32_t(va_arg(va, efi_u32_t), 16, padcnt);
+          print_num(va_arg(va, efi_u32_t), /*base=*/16, /*pad=*/padcnt, /*sign=*/0);
           break;
         case L'l': // 64-bit
           switch (*++fmt) {
           case L'd':
-            efi_print_efi_i64_t(va_arg(va, efi_i64_t), 10);
+            print_num(va_arg(va, efi_i64_t), /*base=*/10, /*pad=*/padcnt, /*sign=*/1);
             break;
           case L'u':
-            efi_print_efi_u64_t(va_arg(va, efi_u64_t), 10, padcnt);
+            print_num(va_arg(va, efi_u64_t), /*base=*/10, /*pad=*/padcnt, /*sign=*/0);
             break;
           case L'x':
-            efi_print_efi_u64_t(va_arg(va, efi_u64_t), 16, padcnt);
+            print_num(va_arg(va, efi_u64_t), /*base=*/16, /*pad=*/padcnt, /*sign=*/0);
             break;
           default:
             goto unknown;
@@ -172,13 +137,13 @@ void efi_print(efi_ch16_t *fmt, ...)
       case L'l': // 64-bit
         switch (*++fmt) {
         case L'd':
-          efi_print_efi_i64_t(va_arg(va, efi_i64_t), 10);
+          print_num(va_arg(va, efi_i64_t), /*base=*/10, /*pad=*/0, /*sign=*/1);
           break;
         case L'u':
-          efi_print_efi_u64_t(va_arg(va, efi_u64_t), 10, 0);
+          print_num(va_arg(va, efi_u64_t), /*base=*/10, /*pad=*/0, /*sign=*/0);
           break;
         case L'x':
-          efi_print_efi_u64_t(va_arg(va, efi_u64_t), 16, 0);
+          print_num(va_arg(va, efi_u64_t), /*base=*/16, /*pad=*/0, /*sign=*/0);
           break;
         default:
           goto unknown;

@@ -12,7 +12,7 @@ void fb_plot(struct fbinfo *fb,
 	 uint32_t x, uint32_t y, uint8_t r, uint8_t g, uint8_t b)
 {
 	unsigned char *pixel =
-		(void *) fb->base + x * fb->pixelwidth + y * fb->linewidth;
+		fb->base + x * fb->pixelwidth + y * fb->linewidth;
 	pixel[fb->red_idx] = r;
 	pixel[fb->grn_idx] = g;
 	pixel[fb->blu_idx] = b;
@@ -109,7 +109,7 @@ void fb_print(struct fbinfo *fb, const char *fmt, ...)
 {
 	va_list va;
 	_Bool wide;
-	const char *p, buf[20];
+	const char *p;
 
 	va_start(va, fmt);
 	for (; *fmt; ++fmt)

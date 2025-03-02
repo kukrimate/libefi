@@ -180,7 +180,7 @@ efi_status_t efi_locate_all_handles(efi_guid_t *protocol, efi_size_t *num_handle
 retry:
 	*out_buffer = efi_alloc(buffer_size);
 
-	status = bs->locate_handle(by_protocol, protocol, NULL, &buffer_size, *out_buffer);
+	status = efi_bs->locate_handle(EFI_LOCATE_BY_PROTOCOL, protocol, NULL, &buffer_size, *out_buffer);
 	if (status == EFI_BUFFER_TOO_SMALL) {
 		efi_free(*out_buffer);
 		goto retry;
@@ -203,7 +203,7 @@ efi_status_t efi_locate_protocol(efi_guid_t *protocol, void **iface)
 	efi_handle_t *handle_buf;
 
 	handle_buf = NULL;
-	status = locate_all_handles(protocol, &handle_cnt, &handle_buf);
+	status = efi_locate_all_handles(protocol, &handle_cnt, &handle_buf);
 	if (EFI_ERROR(status))
 		goto done;
 	if (!handle_cnt) {
@@ -211,7 +211,7 @@ efi_status_t efi_locate_protocol(efi_guid_t *protocol, void **iface)
 		goto done;
 	}
 
-	status = bs->handle_protocol(handle_buf[0], protocol, iface);
+	status = efi_bs->handle_protocol(handle_buf[0], protocol, iface);
 
 done:
 	if (handle_buf)

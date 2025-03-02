@@ -12,7 +12,6 @@
 static efi_status_t alloc_aligned(efi_size_t alingment, efi_size_t bytes, void **buffer)
 {
   efi_status_t status;
-  efi_size_t off;
 
   status = efi_bs->allocate_pages(
     EFI_ALLOCATE_ANY_PAGES,
