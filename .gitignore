@@ -4,3 +4,6 @@ compile_commands.json
 
 # Build directory
 /build
+
+# Test virtual machine
+/vm
