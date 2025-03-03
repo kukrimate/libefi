@@ -311,7 +311,7 @@ static efi_status_t boot_linux(efi_ch16_t *kernel_path, efi_ch16_t *initrd_path,
   }
 
   /* Allocate buffer for the kernel image */
-  efi_print(L"Kernel alingment: %p\n", boot_params->hdr.kernel_alignment);
+  efi_print(L"Kernel alingment: %#" EFI_PRIx32 "\n", boot_params->hdr.kernel_alignment);
   status = alloc_aligned(
     boot_params->hdr.kernel_alignment,
     boot_params->hdr.init_size,

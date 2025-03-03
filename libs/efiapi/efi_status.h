@@ -8,11 +8,13 @@
 /* EFI status */
 typedef efi_size_t efi_status_t;
 
+#define __SIZE_MAX_BIT ((efi_size_t) 1 << (sizeof (efi_size_t) * 8 - 1))
+
 /* Macro for defining error codes */
-#define EFIERR(x) (x | EFI_SIZE_MAX_BIT)
+#define EFIERR(x) (x | __SIZE_MAX_BIT)
 
 /* Macro for checking if a status code is an error */
-#define EFI_ERROR(x) (x & EFI_SIZE_MAX_BIT)
+#define EFI_ERROR(x) (x & __SIZE_MAX_BIT)
 
 /* Success status code */
 #define EFI_SUCCESS 0

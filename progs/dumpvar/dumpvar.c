@@ -35,6 +35,6 @@ retry:
     ++varcnt;
   }
 
-  efi_print(L"# of variables printed: %ld\n", varcnt);
+  efi_print(L"# of variables printed: %zd\n", varcnt);
   return EFI_SUCCESS;
 }

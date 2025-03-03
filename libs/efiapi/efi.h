@@ -4,12 +4,20 @@
 #ifndef EFI_H
 #define EFI_H
 
-/* Freestanding compiler headers */
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
-/* CPU specific header */
-#include <cpu.h>
+// Override ABI on non-Windows compiler
+#if !defined _WIN32
+#define efiapi __attribute__((ms_abi))
+#else
+#define efiapi
+#endif
+
+// Integer types
+#include <efi_inttypes.h>
 
 // EFI handles
 typedef void *efi_handle_t;

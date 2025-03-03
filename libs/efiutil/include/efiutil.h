@@ -1,14 +1,5 @@
-/*
- * UEFI dependent helper functions
- */
-#ifndef EFIUTIL_H
-#define EFIUTIL_H
-
-/*
- * efiutil provides some standard library support
- */
-#include <stdarg.h>
-#include <string.h>
+#pragma once
+#include <efi.h>
 
 /*
  * Globals for accessing UEFI
@@ -23,10 +14,17 @@ extern efi_runtime_services_t *efi_rt;
  */
 void efi_init(efi_handle_t image_handle, efi_system_table_t *system_table);
 
-/*
- * Like printf, but uses UEFI strings
- */
-void efi_print(efi_ch16_t *format, ...);
+// Print a string
+void efi_puts(efi_ch16_t *str);
+
+// Print a character
+void efi_putchar(efi_ch16_t ch);
+
+// Print formatted string, arguments in ap
+void efi_vprint(efi_ch16_t *fmt, va_list ap);
+
+// Print formatted string
+void efi_print(efi_ch16_t *fmt, ...);
 
 /*
  * Print error_msg, then exit with status
@@ -105,5 +103,3 @@ efi_status_t efi_get_file_info(efi_file_protocol_t *file,
  */
 efi_status_t efi_read_file(efi_handle_t device_handle, efi_ch16_t *file_path,
     efi_size_t *out_size, void **out_data);
-
-#endif
