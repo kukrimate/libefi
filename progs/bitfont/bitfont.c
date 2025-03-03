@@ -58,12 +58,16 @@ efi_status_t efiapi efi_main(efi_handle_t image_handle, efi_system_table_t *syst
 	if (EFI_ERROR(status))
 		return status;
 
-	/* Clear the screen */
 	fb_clear(&fb, 0, 0, 0);
 
-	for (size_t i = 0; i < 10000; ++i)
-		fb_print(&fb, "Hello, World %ld!\n", i);
+	for (efi_size_t i = 0; i < 100; ++i)
+		for (const char *s = "Test line\n"; *s; ++s)
+			fb_putchar(&fb, *s);
+
+	for (const char *s = "Press any key to exit\n"; *s; ++s)
+		fb_putchar(&fb, *s);
 
 	efi_bs->wait_for_event(1, &efi_st->con_in->wait_for_key, &index);
+
 	return status;
 }
