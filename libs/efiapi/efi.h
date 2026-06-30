@@ -172,6 +172,26 @@ typedef struct efi_system_table efi_system_table_t;
 #define EFI_ACPI_TABLE_GUID \
   { 0x8868e871, 0xe4f1, 0x11d3, { 0xbc, 0x22, 0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81 } }
 
+
+#define EFI_SYSTEM_TABLE_SIGNATURE      0x5453595320494249
+#define EFI_BOOT_SERVICES_SIGNATURE     0x56524553544f4f42
+#define EFI_RUNTIME_SERVICES_SIGNATURE  0x56524553544e5552
+
+#define EFI_1_02_SYSTEM_TABLE_REVISION  ((1<<16) | (02))
+#define EFI_1_10_SYSTEM_TABLE_REVISION  ((1<<16) | (10))
+#define EFI_2_00_SYSTEM_TABLE_REVISION  ((2<<16) | (00))
+#define EFI_2_10_SYSTEM_TABLE_REVISION  ((2<<16) | (10))
+#define EFI_2_20_SYSTEM_TABLE_REVISION  ((2<<16) | (20))
+#define EFI_2_30_SYSTEM_TABLE_REVISION  ((2<<16) | (30))
+#define EFI_2_31_SYSTEM_TABLE_REVISION  ((2<<16) | (31))
+#define EFI_2_40_SYSTEM_TABLE_REVISION  ((2<<16) | (40))
+#define EFI_2_50_SYSTEM_TABLE_REVISION  ((2<<16) | (50))
+#define EFI_2_60_SYSTEM_TABLE_REVISION  ((2<<16) | (60))
+#define EFI_2_70_SYSTEM_TABLE_REVISION  ((2<<16) | (70))
+#define EFI_2_80_SYSTEM_TABLE_REVISION  ((2<<16) | (80))
+#define EFI_2_90_SYSTEM_TABLE_REVISION  ((2<<16) | (90))
+#define EFI_2_100_SYSTEM_TABLE_REVISION ((2<<16) | (100))
+
 // EFI tables
 typedef struct {
   efi_u64_t signature;
@@ -341,6 +361,13 @@ typedef enum {
 } efi_reset_type_t;
 
 typedef struct {
+  efi_guid_t  capsule_guid;
+  efi_u32_t   header_size;
+  efi_u32_t   flags;
+  efi_u32_t   capsule_image_size;
+} efi_capsule_header_t;
+
+typedef struct {
   efi_table_header_t hdr;
 
   // Time services
@@ -384,8 +411,15 @@ typedef struct {
     void *reset_data);
 
   // Capsule services (UEFI 2.0+)
-  void *update_capsule;
-  void *query_capsule_capabilities;
+  efi_status_t (efiapi *update_capsule)(
+    efi_capsule_header_t **capsule_header_array,
+    efi_size_t capsule_count,
+    efi_physical_address_t scatter_gather_list);
+  efi_status_t (efiapi *query_capsule_capabilities)(
+    efi_capsule_header_t **capsule_header_array,
+    efi_size_t capsule_count,
+    efi_u64_t *maximum_capsule_size,
+    efi_reset_type_t *reset_type);
 
   // Variable infromation service (UEFI 2.0+)
   efi_status_t (efiapi *query_variable_info)(
@@ -398,7 +432,7 @@ typedef struct {
 // EFI configuration table
 typedef struct {
   efi_guid_t    vendor_guid;
-  void        *vendor_table;
+  void          *vendor_table;
 } efi_configuration_table_t;
 
 // EFI system table
